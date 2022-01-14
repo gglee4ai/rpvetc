@@ -11,14 +11,7 @@ Vessel Embrittlement Trend Curve.
 
 ## Installation
 
-You can install the released version of rpvetc from
-[CRAN](https://CRAN.R-project.org) with:
-
-``` r
-install.packages("rpvetc")
-```
-
-And the development version from [GitHub](https://github.com/) with:
+The development version from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
