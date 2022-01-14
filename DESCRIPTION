@@ -1,0 +1,18 @@
+Package: rpvetc
+Title: Reactor Pressure Vessel Embrittlement Trend Curve
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Gyeong-Geun",
+           family = "LEE",
+           role = c("aut", "cre"),
+           email = "gglee4ai@gmail.com",
+           comment = c(ORCID = "0000-0002-0068-492X"))
+Description: provide transition temperature shift for RPV steels.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
