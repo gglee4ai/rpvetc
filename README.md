@@ -1,12 +1,13 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# rpvetc
+# rpvetc: Reactor Pressure Vessel Embrittlement Trend Curve
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of rpvetc is to …
+The goal of **rpvetc** is to provide various models for Reactor Pressure
+Vessel Embrittlement Trend Curve.
 
 ## Installation
 
