@@ -28,7 +28,7 @@ E900_15 <- function(product_form,
                     temperature_unit = c("Celsius", "Fahrenheit"),
                     output = c("TTS", "SD", "TTS1", "TTS2")) {
 
-  # check arguments
+  ## check argument types
   stopifnot(is.character(product_form))
   stopifnot(is.numeric(Cu))
   stopifnot(is.numeric(Ni))
@@ -52,34 +52,34 @@ E900_15 <- function(product_form,
     stop('product_form must be one of c("F", "P", "W")')
   }
 
-  ## fluence convert factor
+  ## fluence_area
   if (fluence_area == "cm2") { # default, n/cm2 from Plotter-22 macro
-    CF <- 3.593e-10
+    FC <- 3.593e-10
     M_minFlu <- 4.5e16
   } else { # n/m2 from ASTM E900-15e2
-    CF <- 1.8943e-12
+    FC <- 1.8943e-12
     M_minFlu <- 4.5e20
   }
 
-  ## temperature convert
+  ## temperature_unit
   if (temperature_unit == "Fahrenheit") {
     temperature <- (temperature - 32) * (5 / 9) # convert to Celcius
   }
 
-  # calculate TTS1
-  pf1 <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
-  TTS1 <- pf1 *
+  ## calculate TTS1
+  A_fpw <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
+  TTS1 <- A_fpw *
     (5 / 9) *
-    CF * fluence^0.5695 * # NOTE
+    FC * fluence^0.5695 * # NOTE FC
     ((1.8 * temperature + 32) / 550)^-5.47 *
     (0.09 + P / 0.012)^0.216 *
     (1.66 + (Ni^8.54) / 0.63)^0.39 *
     (Mn / 1.36)^0.3
 
-  # calculate TTS2
-  pf2 <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
-  M <- pf2 *
-    pmax(pmin(113.87 * (log(fluence) - log(M_minFlu)), 612.6), 0) * # NOTE
+  ## calculate TTS2
+  B_fpw <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
+  M <- B_fpw *
+    pmax(pmin(113.87 * (log(fluence) - log(M_minFlu)), 612.6), 0) * # NOTE M_minFlu
     ((1.8 * temperature + 32) / 550)^-5.45 *
     (0.1 + P / 0.012)^-0.098 *
     (0.168 + (Ni^0.58) / 0.63)^0.73
@@ -87,11 +87,11 @@ E900_15 <- function(product_form,
 
   TTS <- TTS1 + TTS2
 
-  # choose return value
+  ## choose return value
   if (output == "SD") {
-    sd1 <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
-    sd2 <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
-    result <- sd1 * TTS^sd2 # calculate SD
+    C_fpw <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
+    D_fpw <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
+    result <- C_fpw * TTS^D_fpw # calculate SD
   } else if (output == "TTS1") {
     result <- TTS1
   } else if (output == "TTS2") {
@@ -100,9 +100,10 @@ E900_15 <- function(product_form,
     result <- TTS # default
   }
 
-  # change return value along temperature_unit
+  ## change return value along temperature_unit
   if (temperature_unit == "Fahrenheit") {
     result <- result * (9 / 5) # convert to Fahrenheit
   }
+
   unname(result)
 }
