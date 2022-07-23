@@ -2,93 +2,107 @@
 #'
 #' Provide TTS  or SD of ASTM E900-15e2.
 #'
-#' @param product string c("F", "P", "W")
-#' @param Cu number *wt%*.
-#' @param Ni number weight-percentage
-#' @param Mn number weight-percentage
-#' @param P number weight-percentage
-#' @param temperature number degree Celcius
-#' @param fluence number n/cm2
-#' @param temperature_unit string c("degC", "degF")
+#' @param product_form character vector c("F", "P", "W")
+#' @param Cu numeric vector wt%
+#' @param Ni numeric vector wt%
+#' @param Mn numeric vector wt%
+#' @param P  numeric vector wt%
+#' @param temperature numeric vector
+#' @param fluence numeric vector neutron fluence, n/fluence_area
 #' @param fluence_area string c("cm2", "m2")
-#' @param output string c("tts", "sd", "tts1", "tts2)
+#' @param temperature_unit string c("Celsius", "degF")
+#' @param output character c("TTS", "SD", "TTS1", "TTS2")
 #'
-#' @return TTS as given temperature_unit
+#' @return TTS or SD as given temperature_unit
 #' @export
 #' @examples
-#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)  # should be 31.743721
-E900_15 <- function(product, Cu, Ni, Mn, P, temperature, fluence,
-                    temperature_unit = "degC",
-                    fluence_area = "cm2",
-                    output = "tts") {
+#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.74387
+E900_15 <- function(product_form,
+                    Cu,
+                    Ni,
+                    Mn,
+                    P,
+                    temperature,
+                    fluence,
+                    fluence_area = c("cm2", "m2"),
+                    temperature_unit = c("Celsius", "Fahrenheit"),
+                    output = c("TTS", "SD", "TTS1", "TTS2")) {
 
   # check arguments
-  pos <- trimws(product)
-  if (!all(pos %in% c("F", "P", "W"))) {
-    stop('product must be c("F", "P", "W")')
+  stopifnot(is.character(product_form))
+  stopifnot(is.numeric(Cu))
+  stopifnot(is.numeric(Ni))
+  stopifnot(is.numeric(Mn))
+  stopifnot(is.numeric(P))
+  stopifnot(is.numeric(temperature))
+  stopifnot(is.numeric(fluence))
+  fluence_area <- match.arg(fluence_area)
+  temperature_unit <- match.arg(temperature_unit)
+  output <- match.arg(output)
+
+  ## input vectors lengths must be 1L or the same all
+  args <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
+  lengths <- vapply(args, length, FUN.VALUE = integer(1L))
+  n <- max(lengths)
+  stopifnot(all(lengths == 1L | lengths == n))
+
+  ## product_form
+  product_form <- trimws(product_form)
+  if (!all(product_form %in% c("F", "P", "W"))) {
+    stop('product_form must be one of c("F", "P", "W")')
   }
 
-  if (temperature_unit == "degC") {
-    temperature <- temperature
-  } else if (temperature_unit == "degF") {
-    temperature <- (temperature - 32) * 5/9
-  } else {
-    stop("temperature_unit must be 'degC' or 'degF'")
+  ## fluence convert factor
+  if (fluence_area == "cm2") { # default, n/cm2 from Plotter-22 macro
+    CF <- 3.593e-10
+    M_minFlu <- 4.5e16
+  } else { # n/m2 from ASTM E900-15e2
+    CF <- 1.8943e-12
+    M_minFlu <- 4.5e20
   }
 
-  if (fluence_area == "cm2")
-    fluence <- fluence * 10000  # convert to n/cm2 -> n/m2 in ASTM E900-15
-  else if (fluence_area == "m2") {
-    fluence <- fluence
-  } else {
-    stop("fluence_area must be 'cm2' or 'm2'")
+  ## temperature convert
+  if (temperature_unit == "Fahrenheit") {
+    temperature <- (temperature - 32) * (5 / 9) # convert to Celcius
   }
 
-  if (!(output %in% c("tts", "sd", "tts1", "tts2"))) {
-    stop('output must be in c("tts", "sd", "tts1", "tts2")')
-  }
+  # calculate TTS1
+  pf1 <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
+  TTS1 <- pf1 *
+    (5 / 9) *
+    CF * fluence^0.5695 * # NOTE
+    ((1.8 * temperature + 32) / 550)^-5.47 *
+    (0.09 + P / 0.012)^0.216 *
+    (1.66 + (Ni^8.54) / 0.63)^0.39 *
+    (Mn / 1.36)^0.3
 
-  # calculate ASTM E900-15e2
-  pos[pos %in% c("F", "forgings")] <- "1"
-  pos[pos %in% c("P", "plates", "SRM")] <- "2"
-  pos[pos %in% c("W", "welds")] <- "3"
-  pos <- strtoi(pos)
-
-  A_factor <- c(1.011, 1.080, 0.919)  # F, P, W
-  TTS1 <- A_factor[pos] *
-    (5/9) *
-    1.8943e-12 * fluence^0.5695 *
-    ((1.8*temperature + 32)/550)^-5.47 *
-    (0.09 + P/0.012)^0.216 *
-    (1.66 + (Ni^8.54)/0.63)^0.39 *
-    (Mn/1.36)^0.3
-
-  B_factor <- c(0.738, 0.819, 0.968)  # F, P, W
-  M <- B_factor[pos] *
-    pmax(pmin(113.87 * (log(fluence) - log(4.5e20)), 612.6), 0) *
-    ((1.8*temperature + 32)/550)^-5.45 *
-    (0.1 + P/0.012)^-0.098 *
-    (0.168 + (Ni^0.58)/0.63)^0.73
-  TTS2 <- (5/9) * pmax(pmin(Cu, 0.28) - 0.053, 0) * M
+  # calculate TTS2
+  pf2 <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
+  M <- pf2 *
+    pmax(pmin(113.87 * (log(fluence) - log(M_minFlu)), 612.6), 0) * # NOTE
+    ((1.8 * temperature + 32) / 550)^-5.45 *
+    (0.1 + P / 0.012)^-0.098 *
+    (0.168 + (Ni^0.58) / 0.63)^0.73
+  TTS2 <- (5 / 9) * pmax(pmin(Cu, 0.28) - 0.053, 0) * M
 
   TTS <- TTS1 + TTS2
 
   # choose return value
-  if (output == "tts") {
-    res <- TTS
-  } else if (output == "tts1") {
-    res <- TTS1
-  } else if (output == "tts2") {
-    res <- TTS2
+  if (output == "SD") {
+    sd1 <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
+    sd2 <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
+    result <- sd1 * TTS^sd2 # calculate SD
+  } else if (output == "TTS1") {
+    result <- TTS1
+  } else if (output == "TTS2") {
+    result <- TTS2
   } else {
-    SD_factor1 <- c(6.972, 6.593, 7.681)  # F, P, W
-    SD_factor2 <- c(0.199, 0.163, 0.181)  # F, P, W
-    res <- SD_factor1[pos] * TTS^SD_factor2[pos]
+    result <- TTS # default
   }
 
-  # change return value unit
-  if (temperature_unit == "degF") {
-    res <- res * 1.8  # convert to delta degF
+  # change return value along temperature_unit
+  if (temperature_unit == "Fahrenheit") {
+    result <- result * (9 / 5) # convert to Fahrenheit
   }
-  res
+  unname(result)
 }
