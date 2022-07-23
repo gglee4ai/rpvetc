@@ -24,6 +24,6 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(rpvetc)
-E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)  # should be 31.743721
-#> [1] 31.74372
+E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)  # should be 31.74387
+#> [1] 31.74387
 ```
