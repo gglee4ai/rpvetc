@@ -14,26 +14,18 @@
 #' @param output string c("tts", "sd", "tts1", "tts2)
 #'
 #' @return TTS as given temperature_unit
-#' @export
+### #' @export
 #' @examples
-#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)  # should be 31.743721
+#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.743721
 CR3391 <- function(form, Cu, Ni, fl) {
-  # Calculate TTS using CR3391 (NUREG/CR3391 vol.2 by Guthrie (1983).
-  #
-  # Args:
-  #   form: specimen form in ("B"ase, "F"orging, "P"late, "W"eld).
-  #   Cu: Cu wt%.
-  #   Ni: Ni wt%.
-  #   fl: fluence / 1e19
-  #
-  # Returns:
-  #   TTS calculated using CR3391.
   CF <- ifelse(form %in% c("B", "F", "P"),
-               -38.39 + 555.6 * Cu + 480.1 * Cu * tanh(0.353 * Ni / Cu),
-               ifelse(form %in% c("W"),
-                      624 * Cu - 333.1 * sqrt(Cu * Ni) + 251.2 * Ni,
-                      NA))
-  FF <- fl ^ (0.2661 - 0.0449 * log(fl))
+    -38.39 + 555.6 * Cu + 480.1 * Cu * tanh(0.353 * Ni / Cu),
+    ifelse(form %in% c("W"),
+      624 * Cu - 333.1 * sqrt(Cu * Ni) + 251.2 * Ni,
+      NA
+    )
+  )
+  FF <- fl^(0.2661 - 0.0449 * log(fl))
   TTS <- CF * FF
   attr(TTS, "CF") <- CF
   attr(TTS, "FF") <- FF

@@ -34,5 +34,5 @@ TTS as given temperature_unit
 Calculate TTS using CR3391 (NUREG/CR3391 vol.2 by Guthrie (1983).
 }
 \examples{
-E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)  # should be 31.743721
+E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.743721
 }
