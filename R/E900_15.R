@@ -29,7 +29,7 @@ E900_15 <- function(product_form,
                     output = c("TTS", "SD", "TTS1", "TTS2")) {
 
   ## check argument types
-  stopifnot(is.character(product_form))
+  stopifnot(is.character(product_form) | is.character(product_form))
   stopifnot(is.numeric(Cu))
   stopifnot(is.numeric(Ni))
   stopifnot(is.numeric(Mn))
