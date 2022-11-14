@@ -1,16 +1,16 @@
 #' ASTM E900-15e2
 #'
-#' Provide TTS  or SD of ASTM E900-15e2.
+#' Provide TTS or SD of ASTM E900-15e2.
 #'
 #' @param product_form character vector c("F", "P", "W")
-#' @param Cu numeric vector wt%
-#' @param Ni numeric vector wt%
-#' @param Mn numeric vector wt%
-#' @param P  numeric vector wt%
-#' @param temperature numeric vector
-#' @param fluence numeric vector neutron fluence, n/fluence_area
+#' @param Cu numeric vector, wt%
+#' @param Ni numeric vector, wt%
+#' @param Mn numeric vector, wt%
+#' @param P  numeric vector, wt%
+#' @param temperature numeric vector, unit = temperature_unit
+#' @param fluence numeric vector, neutrons/fluence_area
 #' @param fluence_area string c("cm2", "m2")
-#' @param temperature_unit string c("Celsius", "degF")
+#' @param temperature_unit string c("Celsius", "Fahrenheit")
 #' @param output character c("TTS", "SD", "TTS1", "TTS2")
 #'
 #' @return TTS or SD as given temperature_unit
@@ -29,7 +29,7 @@ E900_15 <- function(product_form,
                     output = c("TTS", "SD", "TTS1", "TTS2")) {
 
   ## check argument types
-  stopifnot(is.character(product_form) | is.character(product_form))
+  stopifnot(is.character(product_form) | is.factor(product_form))
   stopifnot(is.numeric(Cu))
   stopifnot(is.numeric(Ni))
   stopifnot(is.numeric(Mn))
@@ -47,7 +47,10 @@ E900_15 <- function(product_form,
   stopifnot(all(lengths == 1L | lengths == n))
 
   ## product_form
-  product_form <- trimws(product_form)
+  product_form <- as.character(product_form)
+  if (any(product_form != trimws(product_form))) {
+    stop("product_form contains leading or training whitespace")
+  }
   if (!all(product_form %in% c("F", "P", "W"))) {
     stop('product_form must be one of c("F", "P", "W")')
   }
