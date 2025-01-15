@@ -7,12 +7,10 @@
 #' @param Ni numeric vector, wt%
 #' @param Mn numeric vector, wt%
 #' @param P  numeric vector, wt%
-#' @param temperature numeric vector, unit = temperature_unit
-#' @param fluence numeric vector, neutrons/fluence_area
-#' @param fluence_area string c("cm2", "m2")
-#' @param temperature_unit string c("Celsius", "Fahrenheit")
+#' @param temperature numeric vector, temperature_unit
+#' @param fluence numeric vector, n/cm2
 #' @param output character c("TTS", "SD", "TTS1", "TTS2")
-#'
+#' @param temperature_unit character c("Celsius", "Fahrenheit")
 #' @return TTS or SD as given temperature_unit
 #' @export
 #' @examples
@@ -24,89 +22,83 @@ E900_15 <- function(product_form,
                     P,
                     temperature,
                     fluence,
-                    fluence_area = c("cm2", "m2"),
-                    temperature_unit = c("Celsius", "Fahrenheit"),
-                    output = c("TTS", "SD", "TTS1", "TTS2")) {
-
-  ## check argument types
+                    output = c("TTS", "SD", "TTS1", "TTS2"),
+                    temperature_unit = c("Celsius", "Fahrenhite")
+                    ) {
+  ## Argument validation
   stopifnot(is.character(product_form) | is.factor(product_form))
-  stopifnot(is.numeric(Cu))
-  stopifnot(is.numeric(Ni))
-  stopifnot(is.numeric(Mn))
-  stopifnot(is.numeric(P))
-  stopifnot(is.numeric(temperature))
-  stopifnot(is.numeric(fluence))
-  fluence_area <- match.arg(fluence_area)
-  temperature_unit <- match.arg(temperature_unit)
+  stopifnot(is.numeric(Cu), Cu >= 0, Cu <= 100)
+  stopifnot(is.numeric(Ni), Ni >= 0, Ni <= 100)
+  stopifnot(is.numeric(Mn), Mn >= 0, Mn <= 100)
+  stopifnot(is.numeric(P), P >= 0, P <= 100)
+  stopifnot(is.numeric(temperature), temperature >= -273.15)
+  stopifnot(is.numeric(fluence), fluence >= 0)
   output <- match.arg(output)
+  temperature_unit <- match.arg(temperature_unit)
 
-  ## input vectors lengths must be 1L or the same all
+  ## Input vector lengths must match
   args <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
   lengths <- vapply(args, length, FUN.VALUE = integer(1L))
   n <- max(lengths)
   stopifnot(all(lengths == 1L | lengths == n))
 
-  ## product_form
-  product_form <- as.character(product_form)
-  if (any(product_form != trimws(product_form))) {
-    stop("product_form contains leading or training whitespace")
-  }
-  if (!all(product_form %in% c("F", "P", "W"))) {
-    stop('product_form must be one of c("F", "P", "W")')
-  }
-
-  ## fluence_area
-  if (fluence_area == "cm2") { # default, n/cm2 from Plotter-22 macro
-    FC <- 3.593e-10
-    M_minFlu <- 4.5e16
-  } else { # n/m2 from ASTM E900-15e2
-    FC <- 1.8943e-12
-    M_minFlu <- 4.5e20
-  }
-
-  ## temperature_unit
   if (temperature_unit == "Fahrenheit") {
-    temperature <- (temperature - 32) * (5 / 9) # convert to Celcius
+    temperature <- (temperature - 32) * (5 / 9)
   }
 
-  ## calculate TTS1
+  ## Calculate TTS1, TTS2, TTS, SD
+  TTS <- E900_15_TTS(product_form, Cu, Ni, Mn, P, temperature, fluence)
+  SD <- E900_15_SD(product_form, TTS)
+  TTS1 <- E900_15_TTS1(product_form, Ni, Mn, P, temperature, fluence)
+  TTS2 <- E900_15_TTS2(product_form, Cu, Ni, P, temperature, fluence)
+
+  ## Choose return value
+  result <- switch(output,
+    TTS = TTS,
+    SD = SD,
+    TTS1 = TTS1,
+    TTS2 = TTS2
+  )
+
+  ## Adjust return value for Fahrenheit
+  if (temperature_unit == "Fahrenheit") {
+    result <- result * (9 / 5)
+  }
+
+  return(result)
+}
+
+E900_15_TTS1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
   A_fpw <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
-  TTS1 <- A_fpw *
-    (5 / 9) *
-    FC * fluence^0.5695 * # NOTE FC
-    ((1.8 * temperature + 32) / 550)^-5.47 *
-    (0.09 + P / 0.012)^0.216 *
-    (1.66 + (Ni^8.54) / 0.63)^0.39 *
-    (Mn / 1.36)^0.3
+  TTS1 <- A_fpw * 3.593E-10 * (fluence)^0.5695 # NOTE: 3.593e10 은 cm2으로 미리 계산 from plotter22 macro
+  TTS1 <- TTS1 * ((1.8 * temperature + 32) / 550)^-5.47
+  TTS1 <- TTS1 * (0.09 + P / 0.012)^0.216
+  TTS1 <- TTS1 * (1.66 + (Ni^8.54) / 0.63)^0.39
+  TTS1 <- TTS1 * (Mn / 1.36)^0.3
+  TTS1 <- TTS1 * (5 / 9)
+  return(unname(TTS1))
+}
 
-  ## calculate TTS2
+E900_15_TTS2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
   B_fpw <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
-  M <- B_fpw *
-    pmax(pmin(113.87 * (log(fluence) - log(M_minFlu)), 612.6), 0) * # NOTE M_minFlu
-    ((1.8 * temperature + 32) / 550)^-5.45 *
-    (0.1 + P / 0.012)^-0.098 *
-    (0.168 + (Ni^0.58) / 0.63)^0.73
-  TTS2 <- (5 / 9) * pmax(pmin(Cu, 0.28) - 0.053, 0) * M
+  M <- B_fpw * pmax(pmin(113.87 * (log(fluence * 1e4) - log(4.5e20)), 612.6), 0)
+  M <- M * ((1.8 * temperature + 32) / 550)^-5.45
+  M <- M * (0.1 + P / 0.012)^-0.098
+  M <- M * (0.168 + (Ni^0.58) / 0.63)^0.73
+  TTS2 <- pmax(pmin(Cu, 0.28) - 0.053, 0) * M
+  TTS2 <- TTS2 * (5 / 9)
+  return(unname(TTS2)) # convert to degC
+}
 
-  TTS <- TTS1 + TTS2
+E900_15_TTS <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
+  TTS1 <- E900_15_TTS1(product_form, Ni, Mn, P, temperature, fluence)
+  TTS2 <- E900_15_TTS2(product_form, Cu, Ni, P, temperature, fluence)
+  TTS1 + TTS2
+}
 
-  ## choose return value
-  if (output == "SD") {
-    C_fpw <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
-    D_fpw <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
-    result <- C_fpw * TTS^D_fpw # calculate SD
-  } else if (output == "TTS1") {
-    result <- TTS1
-  } else if (output == "TTS2") {
-    result <- TTS2
-  } else {
-    result <- TTS # default
-  }
-
-  ## change return value along temperature_unit
-  if (temperature_unit == "Fahrenheit") {
-    result <- result * (9 / 5) # convert to Fahrenheit
-  }
-
-  unname(result)
+E900_15_SD <- function(product_form, TTS) {
+  C_fpw <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
+  D_fpw <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
+  SD <- C_fpw * TTS^D_fpw
+  unname(SD)
 }

@@ -12,37 +12,37 @@ E900_15(
   P,
   temperature,
   fluence,
-  fluence_area = c("cm2", "m2"),
-  temperature_unit = c("Celsius", "Fahrenheit"),
-  output = c("TTS", "SD", "TTS1", "TTS2")
+  fluence_area = "cm2",
+  temperature_unit = "Celsius",
+  output = "TTS"
 )
 }
 \arguments{
 \item{product_form}{character vector c("F", "P", "W")}
 
-\item{Cu}{numeric vector wt\%}
+\item{Cu}{numeric vector, wt\%}
 
-\item{Ni}{numeric vector wt\%}
+\item{Ni}{numeric vector, wt\%}
 
-\item{Mn}{numeric vector wt\%}
+\item{Mn}{numeric vector, wt\%}
 
-\item{P}{numeric vector wt\%}
+\item{P}{numeric vector, wt\%}
 
-\item{temperature}{numeric vector}
+\item{temperature}{numeric vector, temperature_unit}
 
-\item{fluence}{numeric vector neutron fluence, n/fluence_area}
+\item{fluence}{numeric vector, neutrons/fluence_area}
 
-\item{fluence_area}{string c("cm2", "m2")}
+\item{fluence_area}{string c("cm2", "m2") (default: "cm2")}
 
-\item{temperature_unit}{string c("Celsius", "degF")}
+\item{temperature_unit}{string c("Celsius", "Fahrenheit") (default: "Celsius")}
 
-\item{output}{character c("TTS", "SD", "TTS1", "TTS2")}
+\item{output}{character c("TTS", "SD", "TTS1", "TTS2") (default: "TTS")}
 }
 \value{
 TTS or SD as given temperature_unit
 }
 \description{
-Provide TTS  or SD of ASTM E900-15e2.
+Provide TTS or SD of ASTM E900-15e2.
 }
 \examples{
 E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.74387

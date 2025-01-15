@@ -14,7 +14,7 @@
 #' @param output string c("tts", "sd", "tts1", "tts2)
 #'
 #' @return TTS as given temperature_unit
-### #' @export
+#' @export
 #' @examples
 #' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.743721
 CR3391 <- function(form, Cu, Ni, fl) {
