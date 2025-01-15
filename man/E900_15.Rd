@@ -12,9 +12,8 @@ E900_15(
   P,
   temperature,
   fluence,
-  fluence_area = "cm2",
-  temperature_unit = "Celsius",
-  output = "TTS"
+  output = c("TTS", "SD", "TTS1", "TTS2"),
+  temperature_unit = c("Celsius", "Fahrenhite")
 )
 }
 \arguments{
@@ -30,13 +29,11 @@ E900_15(
 
 \item{temperature}{numeric vector, temperature_unit}
 
-\item{fluence}{numeric vector, neutrons/fluence_area}
+\item{fluence}{numeric vector, n/cm2}
 
-\item{fluence_area}{string c("cm2", "m2") (default: "cm2")}
+\item{output}{character c("TTS", "SD", "TTS1", "TTS2")}
 
-\item{temperature_unit}{string c("Celsius", "Fahrenheit") (default: "Celsius")}
-
-\item{output}{character c("TTS", "SD", "TTS1", "TTS2") (default: "TTS")}
+\item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
 \value{
 TTS or SD as given temperature_unit
