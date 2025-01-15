@@ -9,7 +9,7 @@ RG199R2(
   Cu,
   Ni,
   fluence = NULL,
-  output = c("TTS", "CF"),
+  output = c("TTS", "CF", "SD"),
   temperature_unit = c("Celcius", "Fahrenheit")
 )
 }
@@ -22,7 +22,7 @@ RG199R2(
 
 \item{fluence}{numeric vector, n/cm2}
 
-\item{output}{string c("TTS", "CF", "SD)}
+\item{output}{string c("TTS", "CF", "SD")}
 
 \item{temperature_unit}{string c("Celcius", "Fahrenheit")}
 }
@@ -30,7 +30,7 @@ RG199R2(
 TTS or CF as given condition
 }
 \description{
-Provide TTS or CF of Regulatory Guide 1.99 Rev. 2
+Provide TTS or CF of Regulatory Guide 1.99 Rev. 2 tables
 }
 \examples{
 RG199R2("B", 0.2, 0.18, 2.56894e18) # should be 31.74387

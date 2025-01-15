@@ -24,7 +24,8 @@ RG199R2_SV(
 A numeric vector of CF, TTS, or SD (depending on \code{output}).
 }
 \description{
-Provide TTS or CF of Regulatory Guide 1.99 Rev. 2
+Calculate CF or TTS using surveillance test results according to
+Regulatory Guide 1.99 Rev. 2.
 }
 \examples{
 RG199R2_SV(c(0, 0.1, 0.2) * 1e19, c(0, 10, 20), output = "TTS", temperature_unit = "F")

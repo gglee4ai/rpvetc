@@ -1,12 +1,12 @@
 #' RG199R2
 #'
-#' Provide TTS or CF of Regulatory Guide 1.99 Rev. 2
+#' Provide TTS or CF of Regulatory Guide 1.99 Rev. 2 tables
 #'
 #' @param product_form character vector, c("B", F", "P", "W")
 #' @param Cu numeric vector, wt%
 #' @param Ni numeric vector, wt%
 #' @param fluence numeric vector, n/cm2
-#' @param output string c("TTS", "CF", "SD)
+#' @param output string c("TTS", "CF", "SD")
 #' @param temperature_unit string c("Celcius", "Fahrenheit")
 #' @return TTS or CF as given condition
 #' @export
@@ -17,7 +17,7 @@ RG199R2 <- function(
     Cu,
     Ni,
     fluence = NULL,
-    output = c("TTS", "CF"),
+    output = c("TTS", "CF", "SD"),
     temperature_unit = c("Celcius", "Fahrenheit")) {
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
@@ -56,13 +56,15 @@ RG199R2 <- function(
 
   cf <- mapply(RG199R2_CF_table, product_form, Cu, Ni, USE.NAMES = FALSE)
 
+  result <- numeric(n)
+
   ## 결과 선택
   if (output == "CF") {
-    result <- cf
+    result[] <- cf
   } else if (output == "TTS") {
-    result <- RG199R2_TTS(cf, fluence)
+    result[] <- RG199R2_TTS(cf, fluence)
   } else if (output == "SD") {
-    result <- RG199R2_SD(product_form)
+    result[] <- RG199R2_SD(product_form)
   }
 
   ## 온도 단위 변환
@@ -77,7 +79,8 @@ RG199R2 <- function(
 
 #' RG199R2_SV
 #'
-#' Provide TTS or CF of Regulatory Guide 1.99 Rev. 2
+#' Calculate CF or TTS using surveillance test results according to
+#' Regulatory Guide 1.99 Rev. 2.
 #'
 #' @param fluence numeric vector, n/cm2
 #' @param SV_tts numeric vector, TTS from surveillance tests
@@ -99,10 +102,11 @@ RG199R2_SV <- function(
   if (!is.numeric(fluence) || !is.numeric(SV_tts)) {
     stop("fluence and SV_tts must be numeric.")
   }
-  if (length(fluence) != length(SV_tts)) {
+  nfluence <- length(fluence)
+  if (nfluence != length(SV_tts)) {
     stop("fluence and SV_tts must have the same length.")
   }
-  if (length(fluence) < 2) {
+  if (nfluence < 2) {
     warning("Normally, at least 2 data points are needed for meaningful CF calculation.")
   }
   count_positive <- sum(SV_tts > 0)
@@ -115,11 +119,11 @@ RG199R2_SV <- function(
 
   ## 결과 선택
   if (output == "CF") {
-    result <- cf_single
+    result <- rep(cf_single, nfluence)
   } else if (output == "TTS") {
     result <- RG199R2_TTS(cf_single, fluence)
   } else if (output == "SD") {
-    result <- rep(0, length(fluence))
+    result <- rep(-100, nfluence)
   }
 
   ## 온도 단위 변환
