@@ -15,5 +15,5 @@ RG199R2_TTS(CF, fluence)
 TTS as degF
 }
 \description{
-Provide TTS
+Provide TTS using CF and fluence
 }

@@ -13,59 +13,115 @@
 #' @examples
 #' RG199R2("B", 0.2, 0.18, 2.56894e18) # should be 31.74387
 RG199R2 <- function(
-    product_form,
-    Cu,
-    Ni,
+    product_form = NULL,
+    Cu = NULL,
+    Ni = NULL,
     fluence = NULL,
+    SV_flu = NULL,
+    SV_tts = NULL,
+    CF = NULL,
     output = c("TTS", "CF", "SD"),
     temperature_unit = c("Celcius", "Fahrenheit")) {
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
 
-  ## 검증
-  invalid_forms <- setdiff(product_form, c("B", "F", "P", "W"))
-  if (length(invalid_forms) > 0) {
-    stop(sprintf("Invalid product_form: %s", paste(invalid_forms, collapse = ", ")))
-  }
-  if (!is.numeric(Cu) || !is.numeric(Ni)) {
-    stop("Cu and Ni must be numeric.")
-  }
-  if (any(Cu < 0 | Cu > 100)) {
-    stop("Cu must be in [0, 100].")
-  }
-  if (any(Ni < 0 | Ni > 100)) {
-    stop("Ni must be in [0, 100].")
-  }
-  if (output == "TTS" && (is.null(fluence) || any(!is.numeric(fluence), fluence < 0))) {
-    stop("For TTS, fluence must be a non-negative numeric vector.")
+  CF_FLAG <- NULL # CF 계산방법
+
+  ## CF 계산 함수
+  calculate_CF <- function() {
+    # CF가 직접 제공된 경우
+    if (!is.null(CF)) {
+      stopifnot(is.numeric(CF), CF >= 0)
+      CF_FLAG <<- "manual"
+      return(CF)
+    }
+    # SV_flu와 SV_tts가 제공된 경우
+    if (!is.null(SV_flu) && !is.null(SV_tts)) {
+      # 입력 값 검증
+      stopifnot(is.numeric(SV_tts))                 # SV는 숫자형이어야 함
+      stopifnot(is.numeric(SV_flu), SV_flu >= 0) # fluence는 음수가 아니어야 함
+      stopifnot(length(SV_tts) == length(SV_flu))  # SV와 fluence의 길이는 동일해야 함
+      stopifnot(SV_tts[SV_flu == 0] == 0)          # fluence가 0인 곳의 SV도 0이어야 함
+
+      # fluence가 양수인 값 필터링
+      index_positive_SV_flu <- SV_flu > 0
+
+      # 양수 fluence가 2개 이상인 경우 RG199R2_CF_by_SV로 계산
+      if (sum(index_positive_SV_flu) >= 2) {
+        positive_SV_flu <- SV_flu[index_positive_SV_flu]
+        positive_SV_tts <- SV_tts[index_positive_SV_flu]
+        cf <- RG199R2_CF_by_SV(positive_SV_flu, positive_SV_tts)
+        CF_FLAG <<- "by_SV"
+        return(cf)  # 결과 반환
+      }
+    }
+
+    ## 표를 이용해서 SV 계산
+    invalid_forms <- setdiff(product_form, c("B", "F", "P", "W"))
+    if (length(invalid_forms) > 0) {
+      stop(sprintf("Invalid product_form: %s", paste(invalid_forms, collapse = ", ")))
+    }
+    if (!is.numeric(Cu) || !is.numeric(Ni)) {
+      stop("Cu and Ni must be numeric.")
+    }
+    if (any(Cu < 0 | Cu > 100)) {
+      stop("Cu must be in [0, 100].")
+    }
+    if (any(Ni < 0 | Ni > 100)) {
+      stop("Ni must be in [0, 100].")
+    }
+
+    # 길이 일치 여부
+    n <- max(length(product_form), length(Cu), length(Ni))
+    if (!all(
+      length(product_form) %in% c(1, n),
+      length(Cu) %in% c(1, n),
+      length(Ni) %in% c(1, n)
+    )) {
+      stop("Lengths of (product_form, Cu, Ni) must be 1 or same max length.")
+    }
+
+    # F, P 를 B로 컨버팅
+    product_form[product_form %in% c("F", "P")] <- "B"
+
+    cf <- RG199R2_CF_table(product_form, Cu, Ni)
+    CF_flag <<- "table"
+    return(cf)
   }
 
-  # F, P -> B
-  product_form[product_form %in% c("F", "P")] <- "B"
-
-  # 길이 일치 여부(필요시)
-  n <- max(length(product_form), length(Cu), length(Ni), length(fluence %||% 0))
-  if (!all(
-    length(product_form) %in% c(1, n),
-    length(Cu) %in% c(1, n),
-    length(Ni) %in% c(1, n),
-    length(fluence %||% 0) %in% c(0, 1, n)
-  )) {
-    stop("Lengths of (product_form, Cu, Ni, fluence) must be 1 or same max length.")
+  calculate_TTS <- function() {
+    stopifnot(is.numeric(fluence), fluence >= 0) # fluence는 음수가 아니어야 함
+    cf <- calculate_CF()
+    tts <- RG199R2_TTS(cf, fluence)
+    return(tts)
   }
 
-  cf <- mapply(RG199R2_CF_table, product_form, Cu, Ni, USE.NAMES = FALSE)
-
-  result <- numeric(n)
-
-  ## 결과 선택
-  if (output == "CF") {
-    result[] <- cf
-  } else if (output == "TTS") {
-    result[] <- RG199R2_TTS(cf, fluence)
-  } else if (output == "SD") {
-    result[] <- RG199R2_SD(product_form)
+  calculate_SD <- function() {
+    # SD를 계산하기 위해서는 일단 TTS를 계산해야 함
+    cf <- calculate_CF()
+    if (CF_FLAG == "table") {
+      sd <- (2 * c(B = 17, W = 28))[product_form]
+      return(sd)
+    } else if (CF_FLAG == "by_SV") {
+      # SV_cal <- RG199R2_TTS(cf, SV_flu)
+      # diff <- abs(SV_tts - SV_cal)
+      # if ()
+      #
+      #
+      #
+      #
+    } else {
+      return(NA_real_)
+    }
   }
+
+  ## 리턴값 계산
+  result <- switch(
+    output,
+    TTS = calculate_TTS(),
+    CF = calculate_CF(),
+    SD = calculate_SD(),
+  )
 
   ## 온도 단위 변환
   if (temperature_unit == "Celcius") {
@@ -77,68 +133,25 @@ RG199R2 <- function(
 
 
 
-#' RG199R2_SV
+#' RG199R2_TTS
 #'
-#' Calculate CF or TTS using surveillance test results according to
-#' Regulatory Guide 1.99 Rev. 2.
+#' Provide TTS using CF and fluence
 #'
+#' @param CF numeric vector, degF
 #' @param fluence numeric vector, n/cm2
-#' @param SV_tts numeric vector, TTS from surveillance tests
-#' @param output string c("TTS", "CF", "SD)
-#' @param temperature_unit string c("Celcius", "Fahrenheit")
-#' @return A numeric vector of CF, TTS, or SD (depending on \code{output}).
-#' @export
-#' @examples
-#' RG199R2_SV(c(0, 0.1, 0.2) * 1e19, c(0, 10, 20), output = "TTS", temperature_unit = "F")
-RG199R2_SV <- function(
-    fluence,
-    SV_tts,
-    output = c("TTS", "CF", "SD"),
-    temperature_unit = c("Celcius", "Fahrenheit")) {
-  output <- match.arg(output)
-  temperature_unit <- match.arg(temperature_unit)
-
-  # 검증
-  if (!is.numeric(fluence) || !is.numeric(SV_tts)) {
-    stop("fluence and SV_tts must be numeric.")
-  }
-  nfluence <- length(fluence)
-  if (nfluence != length(SV_tts)) {
-    stop("fluence and SV_tts must have the same length.")
-  }
-  if (nfluence < 2) {
-    warning("Normally, at least 2 data points are needed for meaningful CF calculation.")
-  }
-  count_positive <- sum(SV_tts > 0)
-  if (count_positive < 2) {
-    stop("At least two SV_tts values must be > 0.")
-  }
-
-  ## calculate CF
-  cf_single <- RG199R2_CF_by_SV(fluence, SV_tts)
-
-  ## 결과 선택
-  if (output == "CF") {
-    result <- rep(cf_single, nfluence)
-  } else if (output == "TTS") {
-    result <- RG199R2_TTS(cf_single, fluence)
-  } else if (output == "SD") {
-    result <- rep(-100, nfluence)
-  }
-
-  ## 온도 단위 변환
-  if (temperature_unit == "Celcius") {
-    result <- result * (5 / 9)
-  }
-
-  return(unname(result))
+#' @return TTS as degF
+RG199R2_TTS <- function(CF, fluence) {
+  fl <- fluence / 1e19
+  ff <- fl^(0.28 - 0.1 * log10(fl))
+  tts <- CF * ff
+  return(unname(tts))
 }
 
 
 
 #' RG199R2_CF_table
 #'
-#' Provide CF from the tables of Regulatory Guide 1.99 Rev. 2
+#' Provide CF from the tables of Regulatory Guide 1.99 Rev. 2, not vectorized.
 #'
 #' @param product_form character vector, c("B", "W")
 #' @param Cu numeric vector, wt%
@@ -203,7 +216,7 @@ RG199R2_CF_table <- function(product_form, Cu, Ni) {
   ), nrow = 41)
   Ni_values <- seq(0, 1.2, 0.2)
   Cu_values <- seq(0, 0.4, 0.01)
-  if (product_form == "B") {
+  if (product_form %in% c("B", "F", "P")) {
     table <- cf_base
   } else if (product_form == "W") {
     table <- cf_weld
@@ -221,43 +234,16 @@ RG199R2_CF_table <- function(product_form, Cu, Ni) {
 #' Provide CF calculated using TTS of the surveillance test results
 #'
 #' @param fluence numeric vector, n/cm2
-#' @param SV_tts numeric vector, degF
+#' @param SV numeric vector, degF
 #' @return CF as degF
-RG199R2_CF_by_SV <- function(fluence, SV_tts) {
-  fl <- fluence / 1e19
+RG199R2_CF_by_SV <- function(SV_flu, SV_tts) {
+  fl <- SV_flu / 1e19
   ff <- fl^(0.28 - 0.1 * log10(fl))
   ff2 <- ff^2
   cf <- sum(ff * SV_tts) / sum(ff2)
   return(unname(cf))
 }
 
-
-
-#' RG199R2_TTS
-#'
-#' Provide TTS
-#'
-#' @param CF numeric vector, degF
-#' @param fluence numeric vector, n/cm2
-#' @return TTS as degF
-RG199R2_TTS <- function(CF, fluence) {
-  fl <- fluence / 1e19
-  ff <- fl^(0.28 - 0.1 * log10(fl))
-  tts <- CF * ff
-  return(unname(tts))
-}
-
-
-#' RG199R2_SD
-#'
-#' Provide SD
-#'
-#' @param product_form character vector, c("B", "W")
-#' @return SD as degF
-RG199R2_SD <- function(product_form) {
-  sd <- c(B = 17, W = 28)[product_form]
-  return(unname(sd))
-}
 
 
 #' linear_interpolate_2d

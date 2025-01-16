@@ -5,10 +5,13 @@
 \title{RG199R2}
 \usage{
 RG199R2(
-  product_form,
-  Cu,
-  Ni,
+  product_form = NULL,
+  Cu = NULL,
+  Ni = NULL,
   fluence = NULL,
+  SV_flu = NULL,
+  SV_tts = NULL,
+  CF = NULL,
   output = c("TTS", "CF", "SD"),
   temperature_unit = c("Celcius", "Fahrenheit")
 )
