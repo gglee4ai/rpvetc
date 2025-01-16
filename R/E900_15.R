@@ -23,8 +23,7 @@ E900_15 <- function(product_form,
                     temperature,
                     fluence,
                     output = c("TTS", "SD", "TTS1", "TTS2"),
-                    temperature_unit = c("Celsius", "Fahrenhite")
-                    ) {
+                    temperature_unit = c("Celsius", "Fahrenhite")) {
   ## Argument validation
   stopifnot(is.character(product_form) | is.factor(product_form))
   stopifnot(is.numeric(Cu), Cu >= 0, Cu <= 100)
@@ -68,6 +67,39 @@ E900_15 <- function(product_form,
   return(result)
 }
 
+
+
+#' E900_15_TTS
+#'
+#' Calculate TTS of ASTM E900-15, vectorized.
+#'
+#' @param product_form character vector c("F", "P", "W")
+#' @param Cu numeric vector, wt%
+#' @param Ni numeric vector, wt%
+#' @param Mn numeric vector, wt%
+#' @param P numeric vector, wt%
+#' @param temperature numeric vector, temperature_unit
+#' @param fluence numeric vector, n/cm2
+#' @return TTS (degC)
+E900_15_TTS <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
+  TTS1 <- E900_15_TTS1(product_form, Ni, Mn, P, temperature, fluence)
+  TTS2 <- E900_15_TTS2(product_form, Cu, Ni, P, temperature, fluence)
+  TTS1 + TTS2
+}
+
+
+
+#' E900_15_TTS1
+#'
+#' Calculate TTS1 of ASTM E900-15, vectorized.
+#'
+#' @param product_form character vector c("F", "P", "W")
+#' @param Ni numeric vector, wt%
+#' @param Mn numeric vector, wt%
+#' @param P numeric vector, wt%
+#' @param temperature numeric vector, temperature_unit
+#' @param fluence numeric vector, n/cm2
+#' @return TTS (degC)
 E900_15_TTS1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
   A_fpw <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
   TTS1 <- A_fpw * 3.593E-10 * (fluence)^0.5695 # NOTE: 3.593e10 은 cm2으로 미리 계산 from plotter22 macro
@@ -79,6 +111,19 @@ E900_15_TTS1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
   return(unname(TTS1))
 }
 
+
+
+#' E900_15_TTS2
+#'
+#' Calculate TTS2 of ASTM E900-15, vectorized.
+#'
+#' @param product_form character vector c("F", "P", "W")
+#' @param Cu numeric vector, wt%
+#' @param Ni numeric vector, wt%
+#' @param P numeric vector, wt%
+#' @param temperature numeric vector, temperature_unit
+#' @param fluence numeric vector, n/cm2
+#' @return TTS (degC)
 E900_15_TTS2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
   B_fpw <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
   M <- B_fpw * pmax(pmin(113.87 * (log(fluence * 1e4) - log(4.5e20)), 612.6), 0)
@@ -90,12 +135,15 @@ E900_15_TTS2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
   return(unname(TTS2)) # convert to degC
 }
 
-E900_15_TTS <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
-  TTS1 <- E900_15_TTS1(product_form, Ni, Mn, P, temperature, fluence)
-  TTS2 <- E900_15_TTS2(product_form, Cu, Ni, P, temperature, fluence)
-  TTS1 + TTS2
-}
 
+
+#' E900_15_SD
+#'
+#' Calculate SD of ASTM E900-15, vectorized.
+#'
+#' @param product_form character vector c("F", "P", "W")
+#' @param TTS numeric vector, degC
+#' @return SD of TTS (degC)
 E900_15_SD <- function(product_form, TTS) {
   C_fpw <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
   D_fpw <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
