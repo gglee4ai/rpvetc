@@ -77,7 +77,7 @@ CR3391 <- function(product_form,
   names(tts) <- rep("TTS \u00b0F", max_len)
 
   # SD 계산
-  sd <- c(B = 17.2, W = 28.2)[product_form]
+  sd <- c("B" = 17.2, "W" = 28.2)[product_form]
   names(sd) <- rep("SD \u00b0F", max_len)
 
   # 결과 선택
@@ -90,7 +90,7 @@ CR3391 <- function(product_form,
 
   # 온도 변환
   if (output != "FF" && temperature_unit == "Celsius") {
-    result <- result * (5 / 9)
+    result <- (5 / 9) * result
     names(result) <- gsub("\u00b0F", "\u00b0C", names(result))
   }
 

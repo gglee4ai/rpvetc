@@ -105,7 +105,7 @@ NP3319 <- function(product_form,
 
   # 온도 변환
   if (output != "FF" && temperature_unit == "Celsius") {
-    result <- result * (5 / 9)
+    result <- (5 / 9) * result
     names(result) <- gsub("\u00b0F", "\u00b0C", names(result))
   }
 

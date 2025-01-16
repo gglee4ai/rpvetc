@@ -20,8 +20,8 @@ E900_15_TTS2(product_form, Cu, Ni, P, temperature, fluence)
 \item{fluence}{numeric vector, n/cm2}
 }
 \value{
-TTS (degC)
+TTS2 (degC)
 }
 \description{
-Calculate TTS2 of ASTM E900-15, vectorized.
+Calculate TTS2 of ASTM E900-15.
 }

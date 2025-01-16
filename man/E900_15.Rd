@@ -13,7 +13,7 @@ E900_15(
   temperature,
   fluence,
   output = c("TTS", "SD", "TTS1", "TTS2"),
-  temperature_unit = c("Celsius", "Fahrenhite")
+  temperature_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
@@ -31,7 +31,7 @@ E900_15(
 
 \item{fluence}{numeric vector, n/cm2}
 
-\item{output}{character c("TTS", "SD", "TTS1", "TTS2")}
+\item{output}{character c("TTS", "TTS1", "TTS2", "SD")}
 
 \item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
