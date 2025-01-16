@@ -8,7 +8,7 @@ CR3391(
   product_form,
   Cu,
   Ni,
-  fluence,
+  fluence = 0,
   output = c("TTS", "CF", "FF", "SD"),
   temperature_unit = c("Celsius", "Fahrenheit")
 )

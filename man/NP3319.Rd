@@ -8,7 +8,7 @@ NP3319(
   product_form,
   Cu,
   Ni,
-  fluence,
+  fluence = 0,
   output = c("TTS", "CF", "FF"),
   temperature_unit = c("Celsius", "Fahrenheit")
 )
@@ -20,7 +20,7 @@ NP3319(
 
 \item{Ni}{numeric vector, wt\%}
 
-\item{fluence}{nummeric vector n/cm2}
+\item{fluence}{numeric vector n/cm2}
 
 \item{output}{string c("TTS", "CF", "FF")}
 
@@ -33,5 +33,5 @@ output as given unit
 Calculate TTS using NP3319(EPRI NP-3319 TTS model by Odette, 1984).
 }
 \examples{
-NR3319("B", 0.1, 0.6, 1e19)
+NP3319("B", 0.1, 0.6, 1e19)
 }
