@@ -89,8 +89,7 @@ RG199R2 <- function(
     CF <- replicate_to_max(CF, max_len)
     fluence <- replicate_to_max(fluence, max_len)
 
-    cf <- CF
-    tts <- RG199R2_TTS(cf, fluence) # 가정
+    tts <- RG199R2_TTS(CF, fluence) # 가정
     if (verbose) message("Case 1: Used user-provided CF.")
   } else {
     #-------------------------------------#
