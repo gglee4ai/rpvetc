@@ -37,16 +37,11 @@ E900_15 <- function(product_form,
   stopifnot(is.numeric(temperature))
   stopifnot(is.numeric(fluence), fluence >= 0)
 
-
-  ## Input vector lengths must match
+  ## 벡터 크기 검사
   args <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
   arg_len <- sapply(args, length)
   max_len <- max(arg_len)
   stopifnot(all(arg_len == 1L | arg_len == max_len))
-
-  if (temperature_unit == "Fahrenheit") {
-    temperature <- (5 / 9) * (temperature - 32)
-  }
 
   # 입력변수 벡터크기를 동일화
   if (length(product_form) < max_len) {
@@ -71,21 +66,22 @@ E900_15 <- function(product_form,
     fluence <- rep(fluence, max_len)
   }
 
+  # 기본온도를 섭씨로 변환
+  if (temperature_unit == "Fahrenheit") {
+    temperature <- (5 / 9) * (temperature - 32)
+  }
+
   # TTS1 계산
   tts1 <- E900_15_TTS1(product_form, Ni, Mn, P, temperature, fluence)
-  names(tts1) <- rep("TTS1 \u00b0C", max_len)
 
   # TTS2 계산
   tts2 <- E900_15_TTS2(product_form, Cu, Ni, P, temperature, fluence)
-  names(tts2) <- rep("TTS2 \u00b0C", max_len)
 
   # TTS 계산
   tts <- tts1 + tts2
-  names(tts) <- rep("TTS \u00b0C", max_len)
 
   # SD 계산
   sd <- E900_15_SD(product_form, tts)
-  names(sd) <- rep("SD \u00b0C", max_len)
 
   # 결과 선택
   result <- switch(output,
@@ -98,10 +94,9 @@ E900_15 <- function(product_form,
   # 온도 변환
   if (temperature_unit == "Fahrenheit") {
     result <- (9 / 5) * result
-    names(result) <- gsub("\u00b0C", "\u00b0F", names(result))
   }
 
-  return(result)
+  return(unname(result))
 }
 
 

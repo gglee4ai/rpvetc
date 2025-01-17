@@ -31,7 +31,8 @@ NP3319 <- function(product_form,
   stopifnot(is.numeric(fluence), fluence >= 0)
 
   # 벡터 크기 검사
-  arg_len <- c(length(product_form), length(Cu), length(Ni), length(fluence))
+  args <- list(product_form, Cu, Ni, fluence)
+  arg_len <- sapply(args, length)
   max_len <- max(arg_len)
   stopifnot(all(arg_len == 1L | arg_len == max_len))
 
@@ -67,7 +68,6 @@ NP3319 <- function(product_form,
       no = NA_real_
     )
   )
-  names(cf) <- rep("CF \u00b0F", max_len)
 
   # fluence factor 계산
   fl <- fluence / 1e19
@@ -86,11 +86,9 @@ NP3319 <- function(product_form,
       no = NA_real_
     )
   )
-  names(ff) <- rep("FF", max_len)
 
   # TTS 계산
   tts <- cf * ff
-  names(tts) <- rep("TTS \u00b0F", max_len)
 
   # SD 계산
   # sd <- c(B = 17.2, W = 28.2)[product_form]
@@ -106,8 +104,7 @@ NP3319 <- function(product_form,
   # 온도 변환
   if (output != "FF" && temperature_unit == "Celsius") {
     result <- (5 / 9) * result
-    names(result) <- gsub("\u00b0F", "\u00b0C", names(result))
   }
 
-  return(result)
+  return(unname(result))
 }
