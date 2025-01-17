@@ -86,14 +86,14 @@ NP3319 <- function(product_form,
   tts <- cf * ff
 
   # SD 계산
-  # sd <- c(B = 17.2, W = 28.2)[product_form]
+  # std <- c(B = 17.2, W = 28.2)[product_form]
 
   # 결과 선택
   result <- switch(output,
     TTS = tts,
     CF = cf,
     FF = ff,
-    # SD = sd
+    # SD = std
   )
 
   # 온도 변환

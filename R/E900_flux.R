@@ -74,14 +74,14 @@ E900_flux <- function(product_form,
   tts <- tts1 + tts2
 
   # SD 계산
-  sd <- E900_flux_SD(product_form, tts)
+  std <- E900_flux_SD(product_form, tts)
 
   # 결과 선택
   result <- switch(output,
     TTS = tts,
     TTS1 = tts1,
     TTS2 = tts2,
-    SD = sd,
+    SD = std,
   )
 
   # 온도 변환
