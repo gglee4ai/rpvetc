@@ -6,8 +6,12 @@
 #' @param Cu numeric vector, wt%
 #' @param Ni numeric vector, wt%
 #' @param fluence numeric vector, n/cm2
+#' @param SV_flu numeric vector, n/cm2
+#' @param SV_tts numeric vector, temperature unit
+#' @param CF numeric vector, temperature unit
 #' @param output character c("TTS", "CF", "FF", "SD")
 #' @param temperature_unit character c("Celsius", "Fahrenheit")
+#' @param verbose logical TRUE or FALSE
 #' @return TTS or CF as given condition
 #' @export
 #' @examples
@@ -17,137 +21,156 @@ RG199R2 <- function(
     Cu = NULL,
     Ni = NULL,
     fluence = NULL,
-    CF = NULL,
     SV_flu = NULL,
     SV_tts = NULL,
+    CF = NULL,
     output = c("TTS", "CF", "FF", "SD"),
-    temperature_unit = c("Celsius", "Fahrenheit")) {
+    temperature_unit = c("Celsius", "Fahrenheit"),
+    verbose = FALSE) {
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
 
-  # 벡터 크기 검사
-  args <- list(product_form, Cu, Ni)
-  arg_len <- sapply(args, length)
-  max_len <- max(arg_len)
-  stopifnot(all(arg_len == 1L | arg_len == max_len))
-
-  # 입력 길이 맞추는 함수
-  replicate_to_max <- function(x, max_len) {
-    if (length(x) < max_len) rep(x, length.out = max_len) else x
+  #-------------------------------------#
+  # 0) 유효성 검증 함수들
+  #-------------------------------------#
+  validate_cf_data <- function(cf_val, flu_val) {
+    stopifnot(!is.null(cf_val), !is.null(flu_val))
+    stopifnot(is.numeric(cf_val), all(cf_val >= 0))
+    stopifnot(is.numeric(flu_val), all(flu_val >= 0))
   }
 
-  # 입력 길이 처리
-  args <- list(product_form, Cu, Ni)
-  max_len <- max(sapply(args, length))
-  product_form <- replicate_to_max(product_form, max_len)
-  Cu <- replicate_to_max(Cu, max_len)
-  Ni <- replicate_to_max(Ni, max_len)
+  validate_sv_data <- function(flu, tts) {
+    stopifnot(!is.null(flu), !is.null(tts))
+    stopifnot(is.numeric(flu), all(flu >= 0))
+    stopifnot(is.numeric(tts))
+    stopifnot(length(flu) == length(tts))
+    stopifnot(tts[flu == 0] == 0)
+  }
 
+  validate_table_input <- function(pf, cu, ni, flu_val) {
+    stopifnot(!is.null(pf), !is.null(cu), !is.null(ni), !is.null(flu_val))
+    stopifnot(is.character(pf))
+    stopifnot(is.numeric(cu), all(cu >= 0))
+    stopifnot(is.numeric(ni), all(ni >= 0))
+    stopifnot(is.numeric(flu_val), all(flu_val >= 0))
+  }
 
+  check_length <- function(...) {
+    args <- list(...)
+    arg_len <- sapply(args, length)
+    max_len <- max(arg_len)
+    stopifnot(all(arg_len == 1L | arg_len == max_len))
+    max_len
+  }
 
-  CF_FLAG <- NULL # CF 계산방법
+  replicate_to_max <- function(x, max_len) {
+    if (length(x) == 1L && max_len > 1L) rep(x, max_len) else x
+  }
 
-  ## CF 계산 함수
-  calculate_CF <- function() {
-    # CF가 직접 제공된 경우
-    if (!is.null(CF)) {
-      stopifnot(is.numeric(CF), CF >= 0)
-      CF_FLAG <<- "manual"
-      return(CF)
-    }
-    # SV_flu와 SV_tts가 제공된 경우
+  # fluence가 NULL인데 SV_flu가 있으면 fluence로 사용
+  if (is.null(fluence) && !is.null(SV_flu)) {
+    fluence <- SV_flu
+  }
+
+  #-------------------------------------#
+  # 1) Case 1: CF 직접 입력
+  #-------------------------------------#
+  if (!is.null(CF)) {
+    validate_cf_data(CF, fluence)
+    max_len <- check_length(CF, fluence)
+
+    CF <- replicate_to_max(CF, max_len)
+    fluence <- replicate_to_max(fluence, max_len)
+
+    cf <- CF
+    tts <- RG199R2_TTS(cf, fluence) # 가정
+    if (verbose) message("Case 1: Used user-provided CF.")
+  } else {
+    #-------------------------------------#
+    # 2) Case 2 시도 (SV_flu & SV_tts & sum(SV_flu>0) >=2)
+    #    안 되면 Case 3로 넘어가기
+    #-------------------------------------#
+    do_case2 <- FALSE
+
+    # SV_flu & SV_tts가 모두 존재하고, 0보다 큰 fluence가 2개 이상?
     if (!is.null(SV_flu) && !is.null(SV_tts)) {
-      # 입력 값 검증
-      stopifnot(is.numeric(SV_tts)) # SV는 숫자형이어야 함
-      stopifnot(is.numeric(SV_flu), SV_flu >= 0) # fluence는 음수가 아니어야 함
-      stopifnot(length(SV_tts) == length(SV_flu)) # SV와 fluence의 길이는 동일해야 함
-      stopifnot(SV_tts[SV_flu == 0] == 0) # fluence가 0인 곳의 SV도 0이어야 함
+      validate_sv_data(SV_flu, SV_tts)
 
-      # fluence가 양수인 값 필터링
-      index_positive_SV_flu <- SV_flu > 0
-
-      # 양수 fluence가 2개 이상인 경우 RG199R2_CF_by_SV로 계산
-      if (sum(index_positive_SV_flu) >= 2) {
-        positive_SV_flu <- SV_flu[index_positive_SV_flu]
-        positive_SV_tts <- SV_tts[index_positive_SV_flu]
-        cf <- RG199R2_CF_by_SV(positive_SV_flu, positive_SV_tts)
-        CF_FLAG <<- "by_SV"
-        return(cf) # 결과 반환
+      if (sum(SV_flu > 0) >= 2) {
+        do_case2 <- TRUE
       }
     }
 
-    ## 표를 이용해서 SV 계산
-    invalid_forms <- setdiff(product_form, c("B", "F", "P", "W"))
-    if (length(invalid_forms) > 0) {
-      stop(sprintf("Invalid product_form: %s", paste(invalid_forms, collapse = ", ")))
-    }
-    if (!is.numeric(Cu) || !is.numeric(Ni)) {
-      stop("Cu and Ni must be numeric.")
-    }
-    if (any(Cu < 0 | Cu > 100)) {
-      stop("Cu must be in [0, 100].")
-    }
-    if (any(Ni < 0 | Ni > 100)) {
-      stop("Ni must be in [0, 100].")
-    }
+    if (do_case2) {
+      max_len <- check_length(SV_flu, SV_tts, fluence)
+      cf_est <- RG199R2_CF_by_SV(SV_flu, SV_tts) # 가정
+      cf <- replicate_to_max(cf_est, max_len)
+      fluence <- replicate_to_max(fluence, max_len)
 
-    # 길이 일치 여부
-    n <- max(length(product_form), length(Cu), length(Ni))
-    if (!all(
-      length(product_form) %in% c(1, n),
-      length(Cu) %in% c(1, n),
-      length(Ni) %in% c(1, n)
-    )) {
-      stop("Lengths of (product_form, Cu, Ni) must be 1 or same max length.")
-    }
-
-    # F, P 를 B로 컨버팅
-    product_form[product_form %in% c("F", "P")] <- "B"
-
-    cf <- RG199R2_CF_table(product_form, Cu, Ni)
-    CF_flag <<- "table"
-    return(cf)
-  }
-
-  calculate_TTS <- function() {
-    stopifnot(is.numeric(fluence), fluence >= 0) # fluence는 음수가 아니어야 함
-    cf <- calculate_CF()
-    tts <- RG199R2_TTS(cf, fluence)
-    return(tts)
-  }
-
-  calculate_SD <- function() {
-    # SD를 계산하기 위해서는 일단 TTS를 계산해야 함
-    cf <- calculate_CF()
-    if (CF_FLAG == "table") {
-      sd <- (2 * c(B = 17, W = 28))[product_form]
-      return(sd)
-    } else if (CF_FLAG == "by_SV") {
-      # SV_cal <- RG199R2_TTS(cf, SV_flu)
-      # diff <- abs(SV_tts - SV_cal)
-      # if ()
-      #
-      #
-      #
-      #
+      tts <- RG199R2_TTS(cf, fluence)
+      if (verbose) message("Case 2: CF was calculated from SV data (>=2 nonzero points).")
     } else {
-      return(NA_real_)
+      #-------------------------------------#
+      # 3) Case 3: RG1.99 Rev.2 표 이용
+      #-------------------------------------#
+      validate_table_input(product_form, Cu, Ni, fluence)
+      max_len <- check_length(product_form, Cu, Ni, fluence)
+
+      product_form <- replicate_to_max(product_form, max_len)
+      Cu <- replicate_to_max(Cu, max_len)
+      Ni <- replicate_to_max(Ni, max_len)
+      fluence <- replicate_to_max(fluence, max_len)
+
+      cf <- RG199R2_CF_table(product_form, Cu, Ni) # 가정
+      tts <- RG199R2_TTS(cf, fluence)
+      if (verbose) message("Case 3: Used RG1.99 Rev.2 table (Case 2 conditions not met).")
     }
   }
 
-  ## 리턴값 계산
-  result <- switch(output,
-    TTS = calculate_TTS(),
-    CF = calculate_CF(),
-    SD = calculate_SD(),
+  #-------------------------------------#
+  # 4) FF, SD 등 계산 (예시)
+  #-------------------------------------#
+  ff <- NULL
+  std <- NULL
+
+  if ("FF" %in% output) {
+    ff <- RG199R2_FF(fluence)
+  }
+  if ("SD" %in% output) {
+    std <- rep(10, length(tts)) # 임의 값
+  }
+
+  results_list <- list(
+    TTS = tts,
+    CF  = cf,
+    FF  = ff,
+    SD  = std
   )
 
-  ## 온도 단위 변환
-  if (temperature_unit == "Celsius") {
-    result <- result * (5 / 9)
+  result <- results_list[[match.arg(output)]]
+
+  #-------------------------------------#
+  # 5) 온도 변환
+  #-------------------------------------#
+  if (output %in% c("TTS", "CF", "SD") && temperature_unit == "Celsius") {
+    result <- (5 / 9) * result
   }
 
   return(unname(result))
+}
+
+
+
+#' RG199R2_FF
+#'
+#' Provide fluence factor
+#'
+#' @param fluence numeric vector, n/cm2
+#' @return FF
+RG199R2_FF <- function(fluence) {
+  fl <- fluence / 1e19
+  ff <- fl^(0.28 - 0.1 * log10(fl))
+  return(unname(ff))
 }
 
 
@@ -160,11 +183,11 @@ RG199R2 <- function(
 #' @param fluence numeric vector, n/cm2
 #' @return TTS as degF
 RG199R2_TTS <- function(CF, fluence) {
-  fl <- fluence / 1e19
-  ff <- fl^(0.28 - 0.1 * log10(fl))
+  ff <- RG199R2_FF(fluence)
   tts <- CF * ff
   return(unname(tts))
 }
+
 
 
 #' RG199R2_CF_base
@@ -257,7 +280,6 @@ RG199R2_CF_weld <- function(Cu, Ni) { # not vectorized
 
 
 
-
 #' RG199R2_CF_table
 #'
 #' Provide CF from the tables of Regulatory Guide 1.99 Rev. 2.
@@ -267,7 +289,7 @@ RG199R2_CF_weld <- function(Cu, Ni) { # not vectorized
 #' @param Ni numeric vector, wt%
 #' @return CF as degF
 RG199R2_CF_table <- function(product_form, Cu, Ni) {
-  #NOTE: 입력변수 길이를 검사하지 않음!
+  # NOTE: 입력변수 길이를 검사하지 않음!
   result <- mapply(function(pf, cu, ni) {
     if (pf == "B") {
       RG199R2_CF_base(cu, ni)
@@ -285,8 +307,8 @@ RG199R2_CF_table <- function(product_form, Cu, Ni) {
 #'
 #' Provide CF calculated using TTS of the surveillance test results
 #'
-#' @param fluence numeric vector, n/cm2
-#' @param SV numeric vector, degF
+#' @param SV_flu numeric vector, degF
+#' @param SV_tts numeric vector, degF
 #' @return CF as degF
 RG199R2_CF_by_SV <- function(SV_flu, SV_tts) {
   fl <- SV_flu / 1e19

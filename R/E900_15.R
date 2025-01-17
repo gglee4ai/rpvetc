@@ -30,18 +30,12 @@ E900_15 <- function(product_form,
   # 입력변수 검사
   product_form <- as.character(product_form)
   stopifnot(product_form %in% c("B", "F", "P", "W"))
-  stopifnot(is.numeric(Cu), Cu >= 0, Cu <= 100)
-  stopifnot(is.numeric(Ni), Ni >= 0, Ni <= 100)
-  stopifnot(is.numeric(Mn), Mn >= 0, Mn <= 100)
-  stopifnot(is.numeric(P), P >= 0, P <= 100)
+  stopifnot(is.numeric(Cu), all(Cu >= 0), all(Cu <= 100))
+  stopifnot(is.numeric(Ni), all(Ni >= 0), all(Ni <= 100))
+  stopifnot(is.numeric(Mn), all(Mn >= 0), all(Mn <= 100))
+  stopifnot(is.numeric(P), all(P >= 0), all(P <= 100))
   stopifnot(is.numeric(temperature))
-  stopifnot(is.numeric(fluence), fluence >= 0)
-
-  # 입력변수 검사
-  stopifnot(product_form %in% c("B", "F", "P", "W"))
-  stopifnot(is.numeric(Cu), Cu >= 0, Cu <= 100)
-  stopifnot(is.numeric(Ni), Ni >= 0, Ni <= 100)
-  stopifnot(is.numeric(fluence), fluence >= 0)
+  stopifnot(is.numeric(fluence), all(fluence >= 0))
 
   # 벡터 크기 검사
   args <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)

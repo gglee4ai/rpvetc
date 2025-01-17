@@ -9,11 +9,12 @@ RG199R2(
   Cu = NULL,
   Ni = NULL,
   fluence = NULL,
-  CF = NULL,
   SV_flu = NULL,
   SV_tts = NULL,
+  CF = NULL,
   output = c("TTS", "CF", "FF", "SD"),
-  temperature_unit = c("Celsius", "Fahrenheit")
+  temperature_unit = c("Celsius", "Fahrenheit"),
+  verbose = FALSE
 )
 }
 \arguments{
@@ -25,9 +26,17 @@ RG199R2(
 
 \item{fluence}{numeric vector, n/cm2}
 
+\item{SV_flu}{numeric vector, n/cm2}
+
+\item{SV_tts}{numeric vector, temperature unit}
+
+\item{CF}{numeric vector, temperature unit}
+
 \item{output}{character c("TTS", "CF", "FF", "SD")}
 
 \item{temperature_unit}{character c("Celsius", "Fahrenheit")}
+
+\item{verbose}{logical TRUE or FALSE}
 }
 \value{
 TTS or CF as given condition

@@ -18,6 +18,8 @@ E900_flux_TTS2(product_form, Cu, Ni, P, temperature, fluence, flux)
 \item{temperature}{numeric vector, temperature_unit}
 
 \item{fluence}{numeric vector, n/cm2}
+
+\item{flux}{numeric vector, n/cm2/s}
 }
 \value{
 TTS2 (degC)

@@ -1,4 +1,4 @@
-#'E900_flux
+#' E900_flux
 #'
 #' Provide TTS or SD of ASTM E900-15e2 upgraded in MRP-462.
 #'
@@ -15,30 +15,30 @@
 #' @return TTS or SD as given temperature_unit
 #' @export
 #' @examples
-#' E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, ) # should be 31.74387
+#' E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.74387
 E900_flux <- function(product_form,
-                    Cu,
-                    Ni,
-                    Mn,
-                    P,
-                    temperature,
-                    fluence,
-                    flux,
-                    output = c("TTS", "SD", "TTS1", "TTS2"),
-                    temperature_unit = c("Celsius", "Fahrenheit")) {
+                      Cu,
+                      Ni,
+                      Mn,
+                      P,
+                      temperature,
+                      fluence,
+                      flux,
+                      output = c("TTS", "SD", "TTS1", "TTS2"),
+                      temperature_unit = c("Celsius", "Fahrenheit")) {
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
 
   # 입력변수 검사
   product_form <- as.character(product_form)
   stopifnot(product_form %in% c("B", "F", "P", "W"))
-  stopifnot(is.numeric(Cu), Cu >= 0, Cu <= 100)
-  stopifnot(is.numeric(Ni), Ni >= 0, Ni <= 100)
-  stopifnot(is.numeric(Mn), Mn >= 0, Mn <= 100)
-  stopifnot(is.numeric(P), P >= 0, P <= 100)
+  stopifnot(is.numeric(Cu), all(Cu >= 0), all(Cu <= 100))
+  stopifnot(is.numeric(Ni), all(Ni >= 0), all(Ni <= 100))
+  stopifnot(is.numeric(Mn), all(Mn >= 0), all(Mn <= 100))
+  stopifnot(is.numeric(P), all(P >= 0), all(P <= 100))
   stopifnot(is.numeric(temperature))
-  stopifnot(is.numeric(fluence), fluence >= 0)
-  stopifnot(is.numeric(flux), flux >= 0)
+  stopifnot(is.numeric(fluence), all(fluence >= 0))
+  stopifnot(is.numeric(flux), all(flux >= 0))
 
   # 벡터 크기 검사
   args <- list(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
@@ -153,6 +153,7 @@ E900_flux_TTS1 <- function(product_form, Ni, Mn, P, temperature, fluence, flux) 
 #' @param P numeric vector, wt%
 #' @param temperature numeric vector, temperature_unit
 #' @param fluence numeric vector, n/cm2
+#' @param flux numeric vector, n/cm2/s
 #' @return TTS2 (degC)
 E900_flux_TTS2 <- function(product_form, Cu, Ni, P, temperature, fluence, flux) {
   log10flux <- log10(flux)

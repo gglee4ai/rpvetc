@@ -7,9 +7,9 @@
 RG199R2_CF_by_SV(SV_flu, SV_tts)
 }
 \arguments{
-\item{fluence}{numeric vector, n/cm2}
+\item{SV_flu}{numeric vector, degF}
 
-\item{SV}{numeric vector, degF}
+\item{SV_tts}{numeric vector, degF}
 }
 \value{
 CF as degF
