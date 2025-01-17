@@ -36,19 +36,14 @@ NP3319 <- function(product_form,
   max_len <- max(arg_len)
   stopifnot(all(arg_len == 1L | arg_len == max_len))
 
-  # 입력변수 벡터크기를 동일화
-  if (length(product_form) < max_len) {
-    product_form <- rep(product_form, max_len)
+  # 입력변수 벡터 크기를 동일화
+  replicate_to_max <- function(x, max_len) {
+    if (length(x) < max_len) rep(x, length.out = max_len) else x
   }
-  if (length(Cu) < max_len) {
-    Cu <- rep(Cu, max_len)
-  }
-  if (length(Ni) < max_len) {
-    Ni <- rep(Ni, max_len)
-  }
-  if (length(fluence) < max_len) {
-    fluence <- rep(fluence, max_len)
-  }
+  product_form <- replicate_to_max(product_form, max_len)
+  Cu <- replicate_to_max(Cu, max_len)
+  Ni <- replicate_to_max(Ni, max_len)
+  fluence <- replicate_to_max(fluence, max_len)
 
   # product_form을 단순화
   product_form[product_form %in% c("F", "P")] <- "B"

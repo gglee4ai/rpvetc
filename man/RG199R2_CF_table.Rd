@@ -17,5 +17,5 @@ RG199R2_CF_table(product_form, Cu, Ni)
 CF as degF
 }
 \description{
-Provide CF from the tables of Regulatory Guide 1.99 Rev. 2, not vectorized.
+Provide CF from the tables of Regulatory Guide 1.99 Rev. 2.
 }

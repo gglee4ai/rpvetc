@@ -9,11 +9,11 @@ RG199R2(
   Cu = NULL,
   Ni = NULL,
   fluence = NULL,
+  CF = NULL,
   SV_flu = NULL,
   SV_tts = NULL,
-  CF = NULL,
-  output = c("TTS", "CF", "SD"),
-  temperature_unit = c("Celcius", "Fahrenheit")
+  output = c("TTS", "CF", "FF", "SD"),
+  temperature_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
@@ -25,9 +25,9 @@ RG199R2(
 
 \item{fluence}{numeric vector, n/cm2}
 
-\item{output}{string c("TTS", "CF", "SD")}
+\item{output}{character c("TTS", "CF", "FF", "SD")}
 
-\item{temperature_unit}{string c("Celcius", "Fahrenheit")}
+\item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
 \value{
 TTS or CF as given condition

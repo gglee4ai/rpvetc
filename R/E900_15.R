@@ -37,34 +37,29 @@ E900_15 <- function(product_form,
   stopifnot(is.numeric(temperature))
   stopifnot(is.numeric(fluence), fluence >= 0)
 
-  ## 벡터 크기 검사
+  # 입력변수 검사
+  stopifnot(product_form %in% c("B", "F", "P", "W"))
+  stopifnot(is.numeric(Cu), Cu >= 0, Cu <= 100)
+  stopifnot(is.numeric(Ni), Ni >= 0, Ni <= 100)
+  stopifnot(is.numeric(fluence), fluence >= 0)
+
+  # 벡터 크기 검사
   args <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
   arg_len <- sapply(args, length)
   max_len <- max(arg_len)
   stopifnot(all(arg_len == 1L | arg_len == max_len))
 
-  # 입력변수 벡터크기를 동일화
-  if (length(product_form) < max_len) {
-    product_form <- rep(product_form, max_len)
+  # 입력변수 벡터 크기를 동일화
+  replicate_to_max <- function(x, max_len) {
+    if (length(x) < max_len) rep(x, length.out = max_len) else x
   }
-  if (length(Cu) < max_len) {
-    Cu <- rep(Cu, max_len)
-  }
-  if (length(Ni) < max_len) {
-    Ni <- rep(Ni, max_len)
-  }
-  if (length(Mn) < max_len) {
-    Mn <- rep(Mn, max_len)
-  }
-  if (length(P) < max_len) {
-    P <- rep(P, max_len)
-  }
-  if (length(temperature) < max_len) {
-    temperature <- rep(temperature, max_len)
-  }
-  if (length(fluence) < max_len) {
-    fluence <- rep(fluence, max_len)
-  }
+  product_form <- replicate_to_max(product_form, max_len)
+  Cu <- replicate_to_max(Cu, max_len)
+  Ni <- replicate_to_max(Ni, max_len)
+  Mn <- replicate_to_max(Mn, max_len)
+  P <- replicate_to_max(P, max_len)
+  temperature <- replicate_to_max(temperature, max_len)
+  fluence <- replicate_to_max(fluence, max_len)
 
   # 기본온도를 섭씨로 변환
   if (temperature_unit == "Fahrenheit") {
@@ -159,7 +154,7 @@ E900_15_TTS1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
 #' @return TTS2 (degC)
 E900_15_TTS2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
   B_fpw <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
-  M <- B_fpw * pmax(pmin(113.87 * (log(fluence * 1e4) - log(4.5e20)), 612.6), 0)
+  M <- B_fpw * pmax(pmin(113.87 * (log(fluence) - log(4.5e16)), 612.6), 0)
   M <- M * ((1.8 * temperature + 32) / 550)^-5.45
   M <- M * (0.1 + P / 0.012)^-0.098
   M <- M * (0.168 + (Ni^0.58) / 0.63)^0.73
