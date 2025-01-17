@@ -30,6 +30,16 @@ RG199R2 <- function(
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
 
+  # fluence가 NULL인데 SV_flu가 있으면 fluence로 사용
+  if (is.null(fluence) && !is.null(SV_flu)) {
+    fluence <- SV_flu
+  }
+
+  # output 이 CF, SD인데 fluence가 NULL이면 초기화
+  if (is.null(fluence) && output %in% c("CF", "SD")) {
+    fluence <- 0
+  }
+
   #-------------------------------------#
   # 0) 유효성 검증 함수들
   #-------------------------------------#
@@ -67,10 +77,7 @@ RG199R2 <- function(
     if (length(x) == 1L && max_len > 1L) rep(x, max_len) else x
   }
 
-  # fluence가 NULL인데 SV_flu가 있으면 fluence로 사용
-  if (is.null(fluence) && !is.null(SV_flu)) {
-    fluence <- SV_flu
-  }
+
 
   #-------------------------------------#
   # 1) Case 1: CF 직접 입력
@@ -289,14 +296,13 @@ RG199R2_CF_weld <- function(Cu, Ni) { # not vectorized
 #' @param Ni numeric vector, wt%
 #' @return CF as degF
 RG199R2_CF_table <- function(product_form, Cu, Ni) {
-  # NOTE: 입력변수 길이를 검사하지 않음!
   result <- mapply(function(pf, cu, ni) {
-    if (pf == "B") {
+    if (pf %in% c("B", "F", "P")) {
       RG199R2_CF_base(cu, ni)
-    } else if (pf == "W") {
+    } else if (pf %in% c("W")) {
       RG199R2_CF_weld(cu, ni)
     }
-  }, product_form, Cu, Ni)
+  }, product_form, Cu, Ni, SIMPLIFY = TRUE)
 
   return(result)
 }
