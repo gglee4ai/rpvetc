@@ -45,28 +45,8 @@ E900_15 <- function(product_form,
   stopifnot(is.numeric(temperature))
   stopifnot(is.numeric(fluence), all(fluence >= 0))
 
-
-  arg_list <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
-  arg_len <- sapply(arg_list, length)
-  max_len <- max(arg_len)
-
-  # 길이가 1, max_len 두 가지 경우만 허용
-  stopifnot(all(arg_len %in% c(1L, max_len)))
-
-  # 벡터 길이 확장
-  replicate_to_max <- function(x, max_len) {
-    if (length(x) < max_len) rep(x, length.out = max_len) else x
-  }
-  product_form <- replicate_to_max(product_form, max_len)
-  Cu <- replicate_to_max(Cu, max_len)
-  Ni <- replicate_to_max(Ni, max_len)
-  Mn <- replicate_to_max(Mn, max_len)
-  P <- replicate_to_max(P, max_len)
-  temperature <- replicate_to_max(temperature, max_len)
-  fluence <- replicate_to_max(fluence, max_len)
-
   #------------------------------------#
-  # 3) 온도 입력을 "섭씨"로 통일
+  # 2) 온도 입력을 "섭씨"로 통일
   #
   #    - 원코드 로직상, TTS1/TTS2 계산에서
   #      temperature를 "화씨"로 가정하여 식을 썼으므로,
@@ -92,6 +72,27 @@ E900_15 <- function(product_form,
     # °F -> °C
     temperature <- (5 / 9) * (temperature - 32)
   }
+
+  #------------------------------------#
+  # 3) 벡터 길이 및 확장
+  #------------------------------------#
+  arg_list <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
+  arg_len <- sapply(arg_list, length)
+  max_len <- max(arg_len)
+
+  # 길이가 1, max_len 두 가지 경우만 허용
+  stopifnot(all(arg_len %in% c(1L, max_len)))
+
+  replicate_to_max <- function(x, max_len) {
+    if (length(x) < max_len) rep(x, length.out = max_len) else x
+  }
+  product_form <- replicate_to_max(product_form, max_len)
+  Cu <- replicate_to_max(Cu, max_len)
+  Ni <- replicate_to_max(Ni, max_len)
+  Mn <- replicate_to_max(Mn, max_len)
+  P <- replicate_to_max(P, max_len)
+  temperature <- replicate_to_max(temperature, max_len)
+  fluence <- replicate_to_max(fluence, max_len)
 
   #------------------------------------#
   # 4) 보조 함수: TTS1, TTS2, SD

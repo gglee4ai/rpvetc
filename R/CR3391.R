@@ -27,13 +27,16 @@ CR3391 <- function(product_form = NULL,
                    temperature_unit = c("Celsius", "Fahrenheit")) {
   #-------------------------------#
   # 0) 사전 설정
+  #   - 계산시 온도는 degF
   #-------------------------------#
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
 
   # 벡터 길이 확장
   replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) return(x)
+    if (is.null(x)) {
+      return(x)
+    }
     if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
   }
 

@@ -6,16 +6,19 @@
 #' @param Cu numeric vector, wt%
 #' @param Ni numeric vector, wt%
 #' @param fluence numeric vector, n/cm2
+#' @param CF numeric vector, temperature unit
 #' @param SV_flu numeric vector, n/cm2
 #' @param SV_tts numeric vector, temperature unit
-#' @param CF numeric vector, temperature unit
 #' @param output character c("TTS", "CF", "FF", "SD")
 #' @param temperature_unit character c("Celsius", "Fahrenheit")
 #' @param verbose logical TRUE or FALSE
+#'
 #' @return various value according to output
 #' @export
+#'
 #' @examples
 #' RG199R2("B", 0.2, 0.18, 2.56894e18) # should be 31.74387
+#'
 RG199R2 <- function(
     product_form = NULL,
     Cu = NULL,
@@ -27,41 +30,145 @@ RG199R2 <- function(
     output = c("TTS", "CF", "FF", "SD"),
     temperature_unit = c("Celsius", "Fahrenheit"),
     verbose = FALSE) {
+  #------------------------#
+  # 1) 기본 설정
+  #------------------------#
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
 
-  # SV_flu가 있으면, fluence를 대체
-  if (is.null(fluence) && !is.null(SV_flu)) {
+  #------------------------#
+  # 2) 계산용 온도차를 화씨로 변환
+  #------------------------#
+  if (temperature_unit == "Celsius") {
+    if (!is.null(SV_tts) && is.numeric(SV_tts)) {
+      SV_tts <- SV_tts * (9 / 5)
+    }
+    if (!is.null(CF) && is.numeric(CF)) {
+      CF <- CF * (9 / 5)
+    }
+  }
+
+  #------------------------#
+  # 3) SV_flu가 있으면, fluence를 대체
+  #------------------------#
+  if (!is.null(SV_flu) && is.null(fluence)) {
     fluence <- SV_flu
   }
 
-  # 기본 온도를 Fahrenheit로 변경
-  if (temperature_unit == "Celsius") {
-    if (is.numeric(SV_tts)) { # numeric * NULL -> numeric이 되어 버리는 것 방지
-      SV_tts <- (9 / 5) * SV_tts
+  #------------------------#
+  # 4) 길이 확장(벡터)
+  #------------------------#
+  replicate_to_max <- function(x, max_len) {
+    if (is.null(x)) {
+      return(x)
     }
-    if (is.numeric(CF)) { # numeric * NULL -> numeric이 되어 버리는 것 방지
-      CF <- (9 / 5) * CF
-    }
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
   }
+
+  # 필요한 인자들의 길이 파악
+  arg_list <- list(product_form, Cu, Ni, fluence, CF)
+  arg_len <- sapply(arg_list, function(x) if (is.null(x)) 0 else length(x))
+  max_len <- max(arg_len)
+
+  # 길이가 1, max_len 두 가지 경우만 허용
+  if (!all(arg_len %in% c(0, 1, max_len))) {
+    stop("product_form, Cu, Ni, fluence, and CF must have length 1 or max length.")
+  }
+
+  # 일괄 확장
+  product_form <- replicate_to_max(product_form, max_len)
+  Cu <- replicate_to_max(Cu, max_len)
+  Ni <- replicate_to_max(Ni, max_len)
+  fluence <- replicate_to_max(fluence, max_len)
+  CF <- replicate_to_max(CF, max_len)
+
+  #------------------------#
+  # 5) 보조 함수 정의
+  #------------------------#
+  # 5-1) calc_cf_by_sv: 감시시험편으로 CF 추정
+  calc_cf_by_sv <- function(SV_flu, SV_tts) {
+    stopifnot(is.numeric(SV_flu), is.numeric(SV_tts))
+    stopifnot(length(SV_flu) == length(SV_tts))
+    stopifnot(all(SV_tts[SV_flu == 0] == 0))
+    stopifnot((sum(SV_flu > 0) >= 2)) # SV 2개 이상만 적용
+
+    fl <- SV_flu / 1e19
+    ff <- fl^(0.28 - 0.1 * log10(fl))
+    ff2 <- ff^2
+    out <- sum(ff * SV_tts) / sum(ff2)
+    unname(out)
+  }
+
+  # 5-2) calc_cf_table: RG1.99 Rev.2 표(베이스 vs 웰드)에서 CF(°F) 산출
+  calc_cf_table <- function(product_form, Cu, Ni) {
+    stopifnot(is.character(product_form))
+    stopifnot(all(product_form %in% c("B", "F", "P", "W")))
+    stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
+    stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
+
+    mapply(function(pf, cu, ni) {
+      if (pf %in% c("B", "F", "P")) {
+        rg199r2_CF_base(cu, ni) # 표 기반
+      } else {
+        rg199r2_CF_weld(cu, ni) # 표 기반
+      }
+    }, product_form, Cu, Ni, SIMPLIFY = TRUE)
+  }
+
+  # 5-3) calc_cf: 최종 CF 결정(°F)
+  calc_cf <- function(product_form, Cu, Ni, CF, SV_flu, SV_tts) {
+    # Case 1: CF 직접
+    if (!is.null(CF)) {
+      stopifnot(is.numeric(CF), all(CF >= 0))
+      if (verbose) message("Case 1: Using direct CF input.")
+      return(CF)
+    }
+
+    # Case 2: SV 데이터(감시시험)로부터 CF 추정
+    if (!is.null(SV_flu) && !is.null(SV_tts)) {
+      if (is.numeric(SV_flu) && sum(SV_flu > 0) >= 2) {
+        if (verbose) message("Case 2: Using SV data to estimate CF.")
+        return(calc_cf_by_sv(SV_flu, SV_tts))
+      }
+    }
+
+    # Case 3: Table로 계산
+    if (verbose) message("Case 3: Using RG1.99 R2 table for CF.")
+    return(calc_cf_table(product_form, Cu, Ni))
+  }
+
+  # 5-4) calc_ff: fluence factor(무단위)
+  calc_ff <- function(fluence) {
+    stopifnot(is.numeric(fluence), all(fluence >= 0))
+    fl <- fluence / 1e19
+    fl^(0.28 - 0.1 * log10(fl))
+  }
+
+  # 5-5) calc_sd: SD(°F) (예시로 4 고정)
+  calc_sd <- function(product_form) {
+    c("B" = 17, "W" = 28)[product_form]
+  }
+
 
   # 결과 선택
   result <- switch(output,
-    "CF" = RG199R2_CF(product_form, Cu, Ni, SV_flu, SV_tts, CF),
-    "FF" = RG199R2_FF(fluence),
+    "CF" = calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts),
+    "FF" = calc_ff(fluence),
     "TTS" = {
-      cf <- RG199R2_CF(product_form, Cu, Ni, SV_flu, SV_tts, CF)
-      RG199R2_TTS(cf, fluence)
+      cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
+      ff <- calc_ff(fluence)
+      cf * ff
     },
     "SD" = {
-      cf <- RG199R2_CF(product_form, Cu, Ni, SV_flu, SV_tts, CF)
-      ff <- RG199R2_TTS(fluence)
-      tts <- cf * ff
-      RG199R2_SD()
+      calc_sd(product_form)
     }
   )
 
-  # 최종값 변환
+  #------------------------#
+  # 7) 최종 온도 변환
+  #   - TTS, CF, SD는 °F에서 °C 변환 필요
+  #   - FF는 무단위
+  #------------------------#
   if (output %in% c("TTS", "CF", "SD") && temperature_unit == "Celsius") {
     result <- (5 / 9) * result
   }
@@ -71,157 +178,15 @@ RG199R2 <- function(
 
 
 
-#' RG199R2_FF
-#'
-#' Provide fluence factor
-#'
-#' @param fluence numeric vector, n/cm2
-#' @return FF
-RG199R2_FF <- function(fluence) {
-  stopifnot(is.numeric(fluence))
-  stopifnot(all(fluence >= 0))
-
-  fl <- fluence / 1e19
-  ff <- fl^(0.28 - 0.1 * log10(fl))
-  return(ff)
-}
-
-
-
-#' RG199R2_TTS
-#'
-#' Provide TTS from CF and fluence
-#'
-#' @param CF numeric vector, degF
-#' @param fluence numeric vector, n/cm2
-#' @return output TTS as degF
-RG199R2_TTS <- function(CF, fluence) {
-  stopifnot(is.numeric(CF))
-  stopifnot(all(CF >= 0))
-
-  # 벡터 길이 체크
-  arg_len <- c(length(CF), length(fluence))
-  max_len <- max(arg_len)
-  if (!all(arg_len == 1L | arg_len == max_len)) {
-    stop("The lengths of calculated CF and fluence must be 1 or the same.")
-  }
-
-  ff <- RG199R2_FF(fluence)
-  tts <- CF * ff
-  return(tts)
-}
-
-
-
-#' RG199R2_SD
-#'
-#' Provide SD
-#'
-#' @return SD as degF
-RG199R2_SD <- function() {
-  4
-}
-
-
-
-#' RG199R2_CF
-#'
-#' Provide chemistry factor
-#'
-#' @param product_form character vector, c("B", F", "P", "W")
-#' @param Cu numeric vector, wt%
-#' @param Ni numeric vector, wt%
-#' @param SV_flu numeric vector, n/cm2
-#' @param SV_tts numeric vector, degF
-#' @param CF numeric vector, degF
-#' @return CF as degF
-RG199R2_CF <- function(
-    product_form = NULL, Cu = NULL, Ni = NULL,
-    SV_flu = NULL, SV_tts = NULL,
-    CF = NULL) {
-  ## Case 1: CF가 주어졌을 때
-  if (!is.null(CF)) {
-    stopifnot(is.numeric(CF))
-    stopifnot(all(CF >= 0))
-    return(CF)
-  }
-
-  ## Case 2: 2차 이상의 감시시험 결과가 있을 경우
-  if (!is.null(SV_flu) && !is.null(SV_tts)) {
-    stopifnot(is.numeric(SV_flu))
-    stopifnot(is.numeric(SV_tts))
-    stopifnot(length(SV_flu) == length(SV_tts))
-    stopifnot(SV_tts[SV_flu == 0] == 0)
-
-    if (sum(SV_flu > 0) >= 2) {
-      cf <- RG199R2_CF_by_SV(SV_flu, SV_tts)
-      return(cf)
-    }
-  }
-
-  ## Case 3: Table로 부터 직접 CF 계산
-  product_form <- as.character(product_form)
-  stopifnot(all(product_form %in% c("B", "F", "P", "W")))
-  stopifnot(is.numeric(Cu))
-  stopifnot(is.numeric(Ni))
-
-  arg_len <- c(length(product_form), length(Cu), length(Ni))
-  max_len <- max(arg_len)
-  if (!all(arg_len == 1L | arg_len == max_len)) {
-    stop("The lengths of product_form, Cu, and Ni must be 1 or the same.")
-  }
-
-  cf <- RG199R2_CF_table(product_form, Cu, Ni)
-  return(cf)
-}
-
-#' RG199R2_CF_by_SV
-#'
-#' Provide CF calculated using TTS of the surveillance test results
-#'
-#' @param SV_flu numeric vector, n/cm2
-#' @param SV_tts numeric vector, degF
-#' @return CF as degF
-RG199R2_CF_by_SV <- function(SV_flu, SV_tts) {
-  fl <- SV_flu / 1e19
-  ff <- fl^(0.28 - 0.1 * log10(fl))
-  ff2 <- ff^2
-  cf <- sum(ff * SV_tts) / sum(ff2)
-  return(cf)
-}
-
-
-
-#' RG199R2_CF_table
-#'
-#' Provide CF from the tables of Regulatory Guide 1.99 Rev. 2.
-#'
-#' @param product_form character vector, c("B", "F", "P", "W")
-#' @param Cu numeric vector, wt%
-#' @param Ni numeric vector, wt%
-#' @return CF as degF
-RG199R2_CF_table <- function(product_form, Cu, Ni) {
-  result <- mapply(function(pf, cu, ni) {
-    if (pf %in% c("B", "F", "P")) {
-      RG199R2_CF_base(cu, ni)
-    } else if (pf %in% c("W")) {
-      RG199R2_CF_weld(cu, ni)
-    }
-  }, product_form, Cu, Ni, SIMPLIFY = TRUE)
-
-  return(result)
-}
-
-
-
-#' RG199R2_CF_base
+#' rg199r2_CF_base
 #'
 #' Provide CF of base from the tables of Regulatory Guide 1.99 Rev. 2.
 #'
 #' @param Cu numeric vector, wt%
 #' @param Ni numeric vector, wt%
 #' @return CF as degF
-RG199R2_CF_base <- function(Cu, Ni) { # not vectorized
+#'
+rg199r2_CF_base <- function(Cu, Ni) { # not vectorized
   cf_base <- matrix(
     c(
       20, 20, 20, 20, 22, 25, 28, 31, 34, 37, 41, 45, 49,
@@ -253,8 +218,7 @@ RG199R2_CF_base <- function(Cu, Ni) { # not vectorized
   )
   Ni_values <- seq(0, 1.2, 0.2)
   Cu_values <- seq(0, 0.4, 0.01)
-  cf <- linear_interpolate_2d(Ni_values, Cu_values, cf_base, Ni, Cu)
-  return(unname(cf))
+  linear_interpolate_2d(Ni_values, Cu_values, cf_base, Ni, Cu)
 }
 
 
@@ -266,47 +230,48 @@ RG199R2_CF_base <- function(Cu, Ni) { # not vectorized
 #' @param Cu numeric vector, wt%
 #' @param Ni numeric vector, wt%
 #' @return CF as degF
-RG199R2_CF_weld <- function(Cu, Ni) { # not vectorized
-  cf_weld <- matrix(c(
-    20, 20, 21, 22, 24, 26, 29, 32, 36, 40, 44, 49, 52, 58,
-    61, 66, 70, 75, 79, 83, 88, 92, 97, 101, 105, 110, 113,
-    119, 122, 128, 131, 136, 140, 144, 149, 153, 158, 162,
-    166, 171, 175, 20, 20, 26, 35, 43, 49, 52, 55, 58, 61,
-    65, 68, 72, 76, 79, 84, 88, 92, 95, 100, 104, 108, 112,
-    117, 121, 126, 130, 134, 138, 142, 146, 151, 155, 160,
-    164, 168, 172, 177, 182, 185, 189, 20, 20, 27, 41, 54,
-    67, 77, 85, 90, 94, 97, 101, 103, 106, 109, 112, 115,
-    119, 122, 126, 129, 133, 137, 140, 144, 148, 151, 155,
-    160, 164, 167, 172, 175, 180, 184, 187, 191, 196, 200,
-    203, 207, 20, 20, 27, 41, 54, 68, 82, 95, 106, 115, 122,
-    130, 135, 139, 142, 146, 149, 151, 154, 157, 160, 164,
-    167, 169, 173, 176, 180, 184, 187, 191, 194, 198, 202,
-    205, 209, 212, 216, 220, 223, 227, 231, 20, 20, 27, 41,
-    54, 68, 82, 95, 108, 122, 133, 144, 153, 162, 168, 175,
-    178, 184, 187, 191, 194, 197, 200, 203, 206, 209, 212,
-    216, 218, 222, 225, 228, 231, 234, 238, 241, 245, 248,
-    250, 254, 257, 20, 20, 27, 41, 54, 68, 82, 94, 108, 122,
-    135, 148, 161, 172, 182, 191, 199, 207, 214, 220, 223,
-    229, 232, 236, 239, 243, 246, 249, 251, 254, 257, 260,
-    263, 266, 269, 272, 275, 278, 281, 285, 288, 20, 20, 27,
-    41, 54, 68, 82, 95, 108, 122, 135, 148, 161, 176, 188,
-    200, 211, 221, 230, 238, 245, 252, 257, 263, 268, 272,
-    276, 280, 284, 287, 290, 293, 296, 299, 302, 305, 308,
-    311, 314, 317, 320
-  ), nrow = 41)
+#'
+rg199r2_CF_weld <- function(Cu, Ni) { # not vectorized
+  cf_weld <- matrix(
+    c(
+      20, 20, 21, 22, 24, 26, 29, 32, 36, 40, 44, 49, 52, 58,
+      61, 66, 70, 75, 79, 83, 88, 92, 97, 101, 105, 110, 113,
+      119, 122, 128, 131, 136, 140, 144, 149, 153, 158, 162,
+      166, 171, 175, 20, 20, 26, 35, 43, 49, 52, 55, 58, 61,
+      65, 68, 72, 76, 79, 84, 88, 92, 95, 100, 104, 108, 112,
+      117, 121, 126, 130, 134, 138, 142, 146, 151, 155, 160,
+      164, 168, 172, 177, 182, 185, 189, 20, 20, 27, 41, 54,
+      67, 77, 85, 90, 94, 97, 101, 103, 106, 109, 112, 115,
+      119, 122, 126, 129, 133, 137, 140, 144, 148, 151, 155,
+      160, 164, 167, 172, 175, 180, 184, 187, 191, 196, 200,
+      203, 207, 20, 20, 27, 41, 54, 68, 82, 95, 106, 115, 122,
+      130, 135, 139, 142, 146, 149, 151, 154, 157, 160, 164,
+      167, 169, 173, 176, 180, 184, 187, 191, 194, 198, 202,
+      205, 209, 212, 216, 220, 223, 227, 231, 20, 20, 27, 41,
+      54, 68, 82, 95, 108, 122, 133, 144, 153, 162, 168, 175,
+      178, 184, 187, 191, 194, 197, 200, 203, 206, 209, 212,
+      216, 218, 222, 225, 228, 231, 234, 238, 241, 245, 248,
+      250, 254, 257, 20, 20, 27, 41, 54, 68, 82, 94, 108, 122,
+      135, 148, 161, 172, 182, 191, 199, 207, 214, 220, 223,
+      229, 232, 236, 239, 243, 246, 249, 251, 254, 257, 260,
+      263, 266, 269, 272, 275, 278, 281, 285, 288, 20, 20, 27,
+      41, 54, 68, 82, 95, 108, 122, 135, 148, 161, 176, 188,
+      200, 211, 221, 230, 238, 245, 252, 257, 263, 268, 272,
+      276, 280, 284, 287, 290, 293, 296, 299, 302, 305, 308,
+      311, 314, 317, 320
+    ),
+    nrow = 41
+  )
   Ni_values <- seq(0, 1.2, 0.2)
   Cu_values <- seq(0, 0.4, 0.01)
-
-  # CF 계산
-  cf <- linear_interpolate_2d(Ni_values, Cu_values, cf_weld, Ni, Cu)
-  return(unname(cf))
+  linear_interpolate_2d(Ni_values, Cu_values, cf_weld, Ni, Cu)
 }
 
 
 
 #' linear_interpolate_2d
 #'
-#' Provide interpolated value from 2D table (not vectorize).
+#' Provide interpolated value from 2D table (not vectorized).
 #'
 #' @param x_values, numeric vector, x축 값들
 #' @param y_values, numeric vector, y축 값들
@@ -314,6 +279,7 @@ RG199R2_CF_weld <- function(Cu, Ni) { # not vectorized
 #' @param x, numeric, 보간하려는 x 지점
 #' @param y, numeric, 보간하려는 y 지점
 #' @return interpoated value
+#'
 linear_interpolate_2d <- function(x_values, y_values, table, x, y) {
   # x, y가 범위를 벗어나는지 체크해서 에러 발생
   if (x < min(x_values) || x > max(x_values)) {
@@ -365,5 +331,5 @@ linear_interpolate_2d <- function(x_values, y_values, table, x, y) {
       Q22 * (x - x1) * (y - y1)) / ((x2 - x1) * (y2 - y1))
   }
 
-  return(interpolated_value)
+  interpolated_value
 }

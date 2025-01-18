@@ -46,11 +46,11 @@ test_that("SV로 CF 계산후, fluence로 TTS 계산", {
 
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), SV_flu = flu1, SV_tts = tts1, CF = 1)
-  expect_equal(round(test1, 2), 1)
+  expect_equal(round(test1, 2), c(1, 1))
 })
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), CF = 1)
-  expect_equal(round(test1, 2), 1)
+  expect_equal(round(test1, 2), c(1, 1))
 })
 
 
@@ -64,7 +64,7 @@ test_that("1", {
 
 test_that("1", {
   test1 <- fRG199R2(fluence = flu1, CF = 1, output = "CF")
-  expect_equal(round(test1, 2), c(1))
+  expect_equal(round(test1, 2), c(1, 1, 1, 1))
 })
 
 # case 2
@@ -81,7 +81,7 @@ test_that("SV로 CF 계산후, fluence로 TTS 계산", {
 # case 3
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2("B", 0.1, 0.6, c(0, 1e19, 1e20, 1e21), output = "CF")
-  expect_equal(round(test1, 2), c(65))
+  expect_equal(round(test1, 2), c(65, 65, 65, 65))
 })
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), output = "CF")
@@ -90,9 +90,9 @@ test_that("SV로 CF 계산후, fluence로 TTS 계산", {
 
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), SV_flu = flu1, SV_tts = tts1, CF = 1, output = "CF")
-  expect_equal(round(test1, 2), 1)
+  expect_equal(round(test1, 2), c(1, 1))
 })
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), CF = 1, output = "CF")
-  expect_equal(round(test1, 2), 1)
+  expect_equal(round(test1, 2), c(1, 1))
 })

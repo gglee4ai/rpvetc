@@ -49,7 +49,15 @@ E900_flux <- function(product_form,
   stopifnot(is.numeric(flux), all(flux > 0))
 
   #------------------------------------#
-  # 2) 벡터 길이 및 확장
+  # 2) 온도 입력을 "섭씨"로 통일
+  #------------------------------------#
+  if (temperature_unit == "Fahrenheit") {
+    # °F -> °C
+    temperature <- (5 / 9) * (temperature - 32)
+  }
+
+  #------------------------------------#
+  # 3) 벡터 길이 및 확장
   #------------------------------------#
   arg_list <- list(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
   arg_len <- sapply(arg_list, length)
@@ -70,14 +78,6 @@ E900_flux <- function(product_form,
   temperature <- replicate_to_max(temperature, max_len)
   fluence <- replicate_to_max(fluence, max_len)
   flux <- replicate_to_max(flux, max_len)
-
-  #------------------------------------#
-  # 3) 온도 입력을 "섭씨"로 통일
-  #------------------------------------#
-  if (temperature_unit == "Fahrenheit") {
-    # °F -> °C
-    temperature <- (5 / 9) * (temperature - 32)
-  }
 
   #------------------------------------#
   # 4) 보조 함수: TTS1, TTS2, SD

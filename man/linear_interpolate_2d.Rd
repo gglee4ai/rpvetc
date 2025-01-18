@@ -21,5 +21,5 @@ linear_interpolate_2d(x_values, y_values, table, x, y)
 interpoated value
 }
 \description{
-Provide interpolated value from 2D table (not vectorize).
+Provide interpolated value from 2D table (not vectorized).
 }
