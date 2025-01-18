@@ -2,7 +2,7 @@ fNP3319 <- function(...) NP3319(..., temperature_unit = "F")
 
 ## 단일값 계산
 test_that("fluence를 입력하지 않는 경우", {
-  test1 <- NP3319("B", 0.1, 0.6)
+  test1 <- NP3319("B", 0.1, 0.6, 0)
   expect_equal(round(test1, 2), c(0))
 })
 
@@ -27,10 +27,9 @@ test_that("FF 계산", {
 })
 
 test_that("보조함수 fNP3319 TTS 계산", {
-  test1 <- fNP3319("B", 0.1, 0.6, output = "FF")
+  test1 <- fNP3319("B", 0.1, 0.6, 0, output = "FF")
   expect_equal(round(test1, 2), c(0))
 })
-
 
 ## 벡터 테스트
 test_that("product_form이 2개 TTS", {

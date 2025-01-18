@@ -5,33 +5,38 @@
 \title{NP3319}
 \usage{
 NP3319(
-  product_form,
-  Cu,
-  Ni,
-  fluence = 0,
-  output = c("TTS", "CF", "FF"),
+  product_form = NULL,
+  Cu = NULL,
+  Ni = NULL,
+  fluence = NULL,
+  output = c("TTS", "CF", "FF", "SD"),
   temperature_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
-\item{product_form}{character vector c("B", "F", "P", "W")}
+\item{product_form}{character vector c("B","F","P","W")}
 
-\item{Cu}{numeric vector, wt\%}
+\item{Cu}{numeric vector, wt\% (0~100). Not required if only \code{output="FF"}.}
 
-\item{Ni}{numeric vector, wt\%}
+\item{Ni}{numeric vector, wt\% (0~100). Not required if only \code{output="FF"}.}
 
-\item{fluence}{numeric vector n/cm2}
+\item{fluence}{numeric vector (n/cm2). Required unless you set \code{output="CF"} only.}
 
-\item{output}{string c("TTS", "CF", "FF")}
+\item{output}{character c("TTS", "CF", "FF", "SD")}
 
-\item{temperature_unit}{character vector, c("Celsius", "Fahrenheit")}
+\item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
 \value{
-output as given unit
+Numeric vector of CF, FF, or TTS in the specified unit.
 }
 \description{
-Calculate TTS using NP3319(EPRI NP-3319 TTS model by Odette, 1984).
+Calculate TTS using NP-3319 (EPRI NP-3319 TTS model by Odette, 1984).
 }
 \examples{
-NP3319("B", 0.1, 0.6, 1e19)
+# 1) TTS 계산 (모든 인자 필요)
+NP3319(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19)
+
+# 2) FF만 계산 (Cu, Ni 불필요)
+NP3319(product_form = "F", fluence = 1e19, output = "FF")
+
 }

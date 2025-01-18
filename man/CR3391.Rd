@@ -33,5 +33,10 @@ A numeric vector corresponding to \code{output} in the specified \code{temperatu
 Calculate TTS using NUREG/CR3391 vol.2 report by Guthrie (1983).
 }
 \examples{
-CR3391("B", 0.1, 0.6, 1e19, output = "TTS")
+# 1) TTS 계산 (모든 인자 필요)
+CR3391(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19)
+
+# 2) FF만 계산 (Cu, Ni 불필요)
+CR3391(product_form = "F", fluence = 1e19, output = "FF")
+
 }
