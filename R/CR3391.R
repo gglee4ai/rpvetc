@@ -1,6 +1,6 @@
 #' CR3391
 #'
-#' Provide TTS, CF, FF, or SD of Guthrie's model in NUREG/CR3391 (1984).
+#' Provide TTS, CF, FF, or SD of Guthrie's model in NUREG/CR3391 (1983).
 #'
 #' @param product_form character vector. One of c("B", "F", "P", "W").
 #' @param Cu numeric vector, wt% (0~100)

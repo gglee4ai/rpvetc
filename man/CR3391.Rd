@@ -30,7 +30,7 @@ CR3391(
 A numeric vector corresponding to \code{output} in the specified \code{temperature_unit}.
 }
 \description{
-Provide TTS, CF, FF, or SD of Guthrie's model in NUREG/CR3391 (1984).
+Provide TTS, CF, FF, or SD of Guthrie's model in NUREG/CR3391 (1983).
 }
 \examples{
 # 1) TTS 계산 (모든 인자 필요)
