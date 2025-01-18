@@ -1,6 +1,6 @@
 #' RG199R2
 #'
-#' Provide TTS or CF of Regulatory Guide 1.99 Rev. 2 tables
+#' Provide TTS, CF, FF, and SD of Regulatory Guide 1.99 Rev. 2 (1988).
 #'
 #' @param product_form character vector, c("B", F", "P", "W")
 #' @param Cu numeric vector, wt%

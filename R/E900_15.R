@@ -1,6 +1,6 @@
 #' E900_15
 #'
-#' Provide TTS (TTS1+TTS2) or SD of ASTM E900-15e2.
+#' Provide TTS (TTS1+TTS2) or SD of ASTM E900-15e2 (2015).
 #'
 #' @param product_form character vector c("F","P","W").
 #' @param Cu numeric vector, wt%

@@ -30,7 +30,7 @@ NP3319(
 Numeric vector of CF, FF, or TTS in the specified unit.
 }
 \description{
-Calculate TTS using NP-3319 (EPRI NP-3319 TTS model by Odette, 1984).
+Provide TTS, CF, FF, or SD of Odette's model in EPRI NP-3319 (1984).
 }
 \examples{
 # 1) TTS 계산 (모든 인자 필요)

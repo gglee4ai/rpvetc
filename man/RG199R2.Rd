@@ -42,7 +42,7 @@ RG199R2(
 various value according to output
 }
 \description{
-Provide TTS or CF of Regulatory Guide 1.99 Rev. 2 tables
+Provide TTS, CF, FF, and SD of Regulatory Guide 1.99 Rev. 2 (1988).
 }
 \examples{
 RG199R2("B", 0.2, 0.2, 1e19, temperature_unit = "F") # should be 102

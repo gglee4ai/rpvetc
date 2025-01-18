@@ -1,6 +1,6 @@
 #' CR3391
 #'
-#' Calculate TTS using NUREG/CR3391 vol.2 report by Guthrie (1983).
+#' Provide TTS, CF, FF, or SD of Guthrie's model in NUREG/CR3391 (1984).
 #'
 #' @param product_form character vector. One of c("B", "F", "P", "W").
 #' @param Cu numeric vector, wt% (0~100)
