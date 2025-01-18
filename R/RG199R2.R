@@ -164,13 +164,13 @@ RG199R2 <- function(
     }
   )
 
-  #------------------------#
-  # 7) 최종 온도 변환
-  #   - TTS, CF, SD는 °F에서 °C 변환 필요
-  #   - FF는 무단위
-  #------------------------#
-  if (output %in% c("TTS", "CF", "SD") && temperature_unit == "Celsius") {
-    result <- (5 / 9) * result
+  #------------------------------------#
+  # 5) 결과 온도 변환
+  #    - 만약 최종 출력을 °C로 원하면
+  #    - FF 제외
+  #------------------------------------#
+  if (temperature_unit == "Celsius" && output %in% c("TTS", "CF", "SD")) {
+    result <- result * (5 / 9)
   }
 
   return(unname(result))

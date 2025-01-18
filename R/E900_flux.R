@@ -144,7 +144,7 @@ E900_flux <- function(product_form,
   #------------------------------------#
   # 6) 결과 온도 변환
   #    - 만약 최종 출력을 °F로 원하면
-  #      TTS/SD 결과(= degC)를 (×9/5)
+  #      TTS/SD 결과(= °C)를 (×9/5)
   #------------------------------------#
   if (temperature_unit == "Fahrenheit") {
     result <- result * (9 / 5)
