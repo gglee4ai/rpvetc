@@ -39,7 +39,7 @@ RG199R2(
 \item{verbose}{logical TRUE or FALSE}
 }
 \value{
-TTS or CF as given condition
+various value according to output
 }
 \description{
 Provide TTS or CF of Regulatory Guide 1.99 Rev. 2 tables

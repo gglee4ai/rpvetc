@@ -64,24 +64,24 @@ test_that("1", {
 
 test_that("1", {
   test1 <- fRG199R2(fluence = flu1, CF = 1, output = "CF")
-  expect_equal(round(test1, 2), c(1, 1, 1, 1))
+  expect_equal(round(test1, 2), c(1))
 })
 
 # case 2
 test_that("SV만 제공되는 경우, SV fluence에서 TTS 계산", {
   test1 <- fRG199R2(SV_flu = flu1, SV_tts = tts1, output = "CF")
-  expect_equal(round(test1, 2), c(178.97, 178.97, 178.97, 178.97))
+  expect_equal(round(test1, 2), c(178.97))
 })
 
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(fluence = c(0, 1e19, 1e20, 1e21), SV_flu = flu1, SV_tts = tts1, output = "CF")
-  expect_equal(round(test1, 2), c(178.97, 178.97, 178.97, 178.97))
+  expect_equal(round(test1, 2), c(178.97))
 })
 
 # case 3
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2("B", 0.1, 0.6, c(0, 1e19, 1e20, 1e21), output = "CF")
-  expect_equal(round(test1, 2), c(65, 65, 65, 65))
+  expect_equal(round(test1, 2), c(65))
 })
 test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), output = "CF")

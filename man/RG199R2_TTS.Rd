@@ -12,8 +12,8 @@ RG199R2_TTS(CF, fluence)
 \item{fluence}{numeric vector, n/cm2}
 }
 \value{
-TTS as degF
+output TTS as degF
 }
 \description{
-Provide TTS using CF and fluence
+Provide TTS from CF and fluence
 }

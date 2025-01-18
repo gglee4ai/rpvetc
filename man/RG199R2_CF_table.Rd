@@ -7,7 +7,7 @@
 RG199R2_CF_table(product_form, Cu, Ni)
 }
 \arguments{
-\item{product_form}{character vector, c("B", "W")}
+\item{product_form}{character vector, c("B", "F", "P", "W")}
 
 \item{Cu}{numeric vector, wt\%}
 
