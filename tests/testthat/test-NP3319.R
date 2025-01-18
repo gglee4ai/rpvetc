@@ -55,4 +55,3 @@ test_that("product_form이 2개 TTS", {
   y <- c(18.82, 22.31, 68.07)
   expect_equal(round(test1, 2), y)
 })
-

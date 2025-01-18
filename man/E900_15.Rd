@@ -2,7 +2,7 @@
 % Please edit documentation in R/E900_15.R
 \name{E900_15}
 \alias{E900_15}
-\title{ASTM E900-15e2}
+\title{E900_15}
 \usage{
 E900_15(
   product_form,
@@ -12,12 +12,12 @@ E900_15(
   P,
   temperature,
   fluence,
-  output = c("TTS", "SD", "TTS1", "TTS2"),
+  output = c("TTS", "TTS1", "TTS2", "SD"),
   temperature_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
-\item{product_form}{character vector c("F", "P", "W")}
+\item{product_form}{character vector c("F","P","W").}
 
 \item{Cu}{numeric vector, wt\%}
 
@@ -27,7 +27,7 @@ E900_15(
 
 \item{P}{numeric vector, wt\%}
 
-\item{temperature}{numeric vector, temperature_unit}
+\item{temperature}{numeric vector (°C or °F)}
 
 \item{fluence}{numeric vector, n/cm2}
 
@@ -36,11 +36,12 @@ E900_15(
 \item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
 \value{
-TTS or SD as given temperature_unit
+numeric vector (°C or °F) of TTS / TTS1 / TTS2 / SD
 }
 \description{
-Provide TTS or SD of ASTM E900-15e2.
+Provide TTS (TTS1+TTS2) or SD of ASTM E900-15e2, vectorized.
 }
 \examples{
-E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.74387
+E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)
+
 }

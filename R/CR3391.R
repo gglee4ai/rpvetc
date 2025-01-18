@@ -33,13 +33,8 @@ CR3391 <- function(product_form = NULL,
 
   # 벡터 길이 확장
   replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) {
-      return(x) # NULL이면 그대로 둠
-    }
-    if (length(x) == 1 && max_len > 1) {
-      return(rep(x, max_len))
-    }
-    x
+    if (is.null(x)) return(x)
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
   }
 
   #--------------------------#
@@ -110,8 +105,8 @@ CR3391 <- function(product_form = NULL,
   # 6) switch에 따라 결과 계산
   #--------------------------#
   result <- switch(output,
-    "CF"  = calc_cf(product_form, Cu, Ni),
-    "FF"  = calc_ff(fluence),
+    "CF" = calc_cf(product_form, Cu, Ni),
+    "FF" = calc_ff(fluence),
     "TTS" = calc_tts(product_form, Cu, Ni, fluence),
     "SD" = calc_sd(product_form)
   )

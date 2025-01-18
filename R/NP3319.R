@@ -38,14 +38,8 @@ NP3319 <- function(product_form = NULL,
 
   # 벡터 길이 확장
   replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) {
-      return(x) # NULL이면 그대로 둠
-    }
-    if (length(x) == 1 && max_len > 1) {
-      rep(x, max_len)
-    } else {
-      x
-    }
+    if (is.null(x)) return(x)
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
   }
 
   #--------------------------#

@@ -28,7 +28,7 @@ E900_flux(
 
 \item{P}{numeric vector, wt\%}
 
-\item{temperature}{numeric vector, temperature_unit}
+\item{temperature}{numeric vector (°C or °F)}
 
 \item{fluence}{numeric vector, n/cm2}
 
@@ -39,11 +39,12 @@ E900_flux(
 \item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
 \value{
-TTS or SD as given temperature_unit
+numeric vector (°C or °F) of TTS / TTS1 / TTS2 / SD
 }
 \description{
 Provide TTS or SD of ASTM E900-15e2 upgraded in MRP-462.
 }
 \examples{
 E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.74387
+
 }
