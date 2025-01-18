@@ -43,19 +43,18 @@ test_that("SD 계산, 섭씨 단위로", {
 
 
 ## 벡터 테스트
-p <- c("B", "W")
 test_that("product_form이 2개 TTS", {
-  test1 <- fCR3391(p, 0.1, 0.6, 1e18)
+  test1 <- fCR3391(c("B", "W"), 0.1, 0.6, 1e18)
   expect_equal(round(test1, 2), c(27.25, 56.17))
 })
 
 test_that("product_form이 2개 CF", {
-  test1 <- fCR3391(p, 0.1, 0.6, 1e18, output = "CF")
+  test1 <- fCR3391(c("B", "W"), 0.1, 0.6, 1e18, output = "CF")
   expect_equal(round(test1, 2), c(63.81, 131.53))
 })
 
 test_that("product_form이 2개 FF", {
-  test1 <- fCR3391(p, 0.1, 0.6, 1e18, output = "FF")
+  test1 <- fCR3391(c("B", "W"), 0.1, 0.6, 1e18, output = "FF")
   expect_equal(round(test1, 2), c(0.43, 0.43))
 })
 
@@ -65,15 +64,15 @@ test_that("fluence가 2개 CF", {
 })
 
 test_that("PF랑 fluence가 각각 2개", {
-  test1 <- fCR3391(p, 0.1, 0.6, c(1e18, 1e19), output = "CF")
-  expect_equal(round(test1, 2), c(63.81, 131.53))
+  test1 <- fCR3391(c("B", "W"), 0.1, c(0.1, 0.6), c(1e18, 1e19), output = "CF")
+  expect_equal(round(test1, 2), c(33.45, 131.53))
 })
 
 test_that("CF * FF = TTS?", {
-  cf <- fCR3391(p, 0.1, 0.6, c(1e18, 1e19), output = "CF")
-  ff <- fCR3391(p, 0.1, 0.6, c(1e18, 1e19), output = "FF")
+  cf <- fCR3391(c("B", "W"), 0.1, 0.6, c(1e18, 1e19), output = "CF")
+  ff <- fCR3391(c("B", "W"), 0.1, 0.6, c(1e18, 1e19), output = "FF")
   tts1 <- cf * ff
-  tts2 <- fCR3391(p, 0.1, 0.6, c(1e18, 1e19))
+  tts2 <- fCR3391(c("B", "W"), 0.1, 0.6, c(1e18, 1e19))
   expect_equal(tts1, tts2)
 })
 
@@ -81,7 +80,7 @@ test_that("CF * FF = TTS?", {
 ## SD 테스트
 
 test_that("CR3391 FF 계산2", {
-  test1 <- fCR3391(p, 0.1, 0.6, c(1e18, 1e19), output = "SD")
+  test1 <- fCR3391(c("B", "W"), 0.1, 0.6, c(1e18, 1e19), output = "SD")
   expect_equal(round(test1, 2), c(17.2, 28.2))
 })
 
@@ -96,6 +95,6 @@ test_that("CR3391 FF 계산2", {
 })
 
 test_that("CR3391 FF 계산2", {
-  test1 <- fCR3391(p, c(0.1, 0.2), 0.6, c(1e18), output = "SD")
+  test1 <- fCR3391(c("B", "W"), c(0.1, 0.2), 0.6, c(1e18), output = "SD")
   expect_equal(round(test1, 2), c(17.2, 28.2))
 })

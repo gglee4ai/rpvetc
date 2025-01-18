@@ -5,33 +5,33 @@
 \title{CR3391}
 \usage{
 CR3391(
-  product_form,
-  Cu,
-  Ni,
-  fluence = 0,
+  product_form = NULL,
+  Cu = NULL,
+  Ni = NULL,
+  fluence = NULL,
   output = c("TTS", "CF", "FF", "SD"),
   temperature_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
-\item{product_form}{character vector c("B", "F", "P", "W")}
+\item{product_form}{character vector. One of c("B", "F", "P", "W").}
 
-\item{Cu}{numeric vector, wt\%}
+\item{Cu}{numeric vector, wt\% (0~100)}
 
-\item{Ni}{numeric vector, wt\%}
+\item{Ni}{numeric vector, wt\% (0~100)}
 
-\item{fluence}{nummeric vector n/cm2}
+\item{fluence}{numeric vector n/cm2 (0 이상)}
 
-\item{output}{string c("TTS", "CF", "FF", "SD")}
+\item{output}{character c("TTS", "CF", "FF", "SD")}
 
-\item{temperature_unit}{character vector, c("Celsius", "Fahrenheit")}
+\item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 }
 \value{
-TTS as given temperature_unit
+A numeric vector corresponding to \code{output} in the specified \code{temperature_unit}.
 }
 \description{
 Calculate TTS using NUREG/CR3391 vol.2 report by Guthrie (1983).
 }
 \examples{
-CR3391("B", 0.1, 0.6, 1e19)
+CR3391("B", 0.1, 0.6, 1e19, output = "TTS")
 }
