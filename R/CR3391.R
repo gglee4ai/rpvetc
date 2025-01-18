@@ -26,19 +26,10 @@ CR3391 <- function(product_form = NULL,
                    output = c("TTS", "CF", "FF", "SD"),
                    temperature_unit = c("Celsius", "Fahrenheit")) {
   #-------------------------------#
-  # 0) 사전 설정
-  #   - 계산시 온도는 degF
+  # 0) 기본 설정, 온도 기준 degF
   #-------------------------------#
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
-
-  # 벡터 길이 확장
-  replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) {
-      return(x)
-    }
-    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
-  }
 
   #--------------------------#
   # 1) product_form 전처리
@@ -58,10 +49,16 @@ CR3391 <- function(product_form = NULL,
   arg_len <- sapply(args, length)
   max_len <- max(arg_len)
 
-  # 길이가 0, 1, max_len 세 가지 경우만 허용
+  # 길이가 0(NULL), 1, max_len 세 가지 경우만 허용
   stopifnot(all(arg_len %in% c(0, 1, max_len)))
 
-  # 일괄 확장
+  # 벡터 길이 확장
+  replicate_to_max <- function(x, max_len) {
+    if (is.null(x)) {
+      return(x)
+    }
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
+  }
   product_form <- replicate_to_max(product_form, max_len)
   Cu <- replicate_to_max(Cu, max_len)
   Ni <- replicate_to_max(Ni, max_len)
@@ -71,37 +68,37 @@ CR3391 <- function(product_form = NULL,
   # 3) 주요 계산 함수들(중복된 인자 검사는 제외)
   #--------------------------#
   # (1) CF 계산
-  calc_cf <- function(form, cu, ni) {
-    stopifnot(is.numeric(cu), all(cu >= 0 & cu <= 100))
-    stopifnot(is.numeric(ni), all(ni >= 0 & ni <= 100))
+  calc_cf <- function(product_form, Cu, Ni) {
+    stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
+    stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
 
-    base_cf <- -38.39 + 555.6 * cu + 480.1 * cu * tanh(0.353 * ni / cu)
-    weld_cf <- 624 * cu - 333.1 * sqrt(cu * ni) + 251.2 * ni
+    base_cf <- -38.39 + 555.6 * Cu + 480.1 * Cu * tanh(0.353 * Ni / Cu)
+    weld_cf <- 624 * Cu - 333.1 * sqrt(Cu * Ni) + 251.2 * Ni
 
-    ifelse(form == "B", base_cf,
-      ifelse(form == "W", weld_cf, NA_real_)
+    ifelse(product_form == "B", base_cf,
+      ifelse(product_form == "W", weld_cf, NA_real_)
     )
   }
 
   # (2) FF 계산
-  calc_ff <- function(flu) {
-    stopifnot(is.numeric(flu), all(flu >= 0))
+  calc_ff <- function(fluence) {
+    stopifnot(is.numeric(fluence), all(fluence >= 0))
 
-    fl <- flu / 1e19
+    fl <- fluence / 1e19
     fl^(0.2661 - 0.0449 * log(fl))
   }
 
-  # (3) SD 계산
-  calc_sd <- function(form) {
-    c(B = 17.2, W = 28.2)[form]
+  # (3) TTS 계산
+  calc_tts <- function(product_form, Cu, Ni, fluence) {
+    # 각 인수 검증은 함수 호출에서 수행함
+    cf <- calc_cf(product_form, Cu, Ni)
+    ff <- calc_ff(fluence)
+    cf * ff
   }
 
-  # (4) TTS 계산
-  calc_tts <- function(form, cu, ni, flu) {
-    # 각 인수 검증은 함수 호출에서 수행함
-    cf <- calc_cf(form, cu, ni)
-    ff <- calc_ff(flu)
-    cf * ff
+  # (4) SD 계산
+  calc_sd <- function(product_form) {
+    c(B = 17.2, W = 28.2)[product_form]
   }
 
   #--------------------------#

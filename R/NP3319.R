@@ -26,7 +26,7 @@ NP3319 <- function(product_form = NULL,
                    output = c("TTS", "CF", "FF", "SD"),
                    temperature_unit = c("Celsius", "Fahrenheit")) {
   #-------------------------------#
-  # 0) 사전 설정
+  # 0) 기본 설정, 온도 기준 degF
   #-------------------------------#
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
@@ -34,14 +34,6 @@ NP3319 <- function(product_form = NULL,
   # 에러 함수(erf) 정의
   erf <- function(x) {
     2 * stats::pnorm(x * sqrt(2)) - 1
-  }
-
-  # 벡터 길이 확장
-  replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) {
-      return(x)
-    }
-    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
   }
 
   #--------------------------#
@@ -60,58 +52,65 @@ NP3319 <- function(product_form = NULL,
   #  - 길이가 0, 1, 또는 max_len인지 확인
   arg_list <- list(product_form, Cu, Ni, fluence)
   arg_len <- sapply(arg_list, length)
-  max_len <- max(arg_len) # 0, 1, 또는 n
+  max_len <- max(arg_len)
 
-  # 길이가 0, 1, max_len 세 가지 경우만 허용
+  # 길이가 0(NULL), 1, max_len 세 가지 경우만 허용
   stopifnot(all(arg_len %in% c(0, 1, max_len)))
 
-  # 일괄 확장
+  # 벡터 길이 확장
+  replicate_to_max <- function(x, max_len) {
+    if (is.null(x)) {
+      return(x)
+    }
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
+  }
   product_form <- replicate_to_max(product_form, max_len)
   Cu <- replicate_to_max(Cu, max_len)
   Ni <- replicate_to_max(Ni, max_len)
   fluence <- replicate_to_max(fluence, max_len)
 
   #-------------------------------#
-  # 3) 주요 계산 함수들(중복 검사는 제외)
+  # 3) 주요 계산 함수들(중복된 인자 검사는 제외)
   #-------------------------------#
   # (1) CF 계산
-  calc_cf <- function(form, cu, ni) {
-    stopifnot(!is.null(cu), is.numeric(cu), all(cu >= 0 & cu <= 100))
-    stopifnot(!is.null(ni), is.numeric(ni), all(ni >= 0 & ni <= 100))
+  calc_cf <- function(product_form, Cu, Ni) {
+    stopifnot(!is.null(Cu), is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
+    stopifnot(!is.null(Ni), is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
 
-    base_cf <- cu * 216 * (1 + 0.33 * (erf(0.77 * ni / cu - 1) + 1))
-    weld_cf <- cu * 200 * (1 + 1.38 * (erf(0.30 * ni / cu - 1) + 1))
+    base_cf <- Cu * 216 * (1 + 0.33 * (erf(0.77 * Ni / Cu - 1) + 1))
+    weld_cf <- Cu * 200 * (1 + 1.38 * (erf(0.30 * Ni / Cu - 1) + 1))
 
-    ifelse(form == "B", base_cf,
-      ifelse(form == "W", weld_cf, NA_real_)
+    ifelse(product_form == "B", base_cf,
+      ifelse(product_form == "W", weld_cf, NA_real_)
     )
   }
 
   # (2) FF 계산
-  calc_ff <- function(form, flu) {
-    stopifnot(is.numeric(flu), all(flu >= 0))
+  calc_ff <- function(product_form, fluence) {
+    stopifnot(is.numeric(fluence), all(fluence >= 0))
 
-    fl <- flu / 1e19
+    fl <- fluence / 1e19
     base_ff <- fl^0.28
     weld_ff <- (1 - exp(-fl / 0.11))^1.36 * fl^0.18
 
-    ifelse(form == "B", base_ff,
-      ifelse(form == "W", weld_ff, NA_real_)
+    ifelse(product_form == "B", base_ff,
+      ifelse(product_form == "W", weld_ff, NA_real_)
     )
   }
 
-  # (3) SD 계산
-  calc_sd <- function(form) {
+  # (3) TTS 계산
+  calc_tts <- function(product_form, Cu, Ni, fluence) {
+    # 각 인수 검증은 함수 호출에서 수행함
+    cf <- calc_cf(product_form, Cu, Ni)
+    ff <- calc_ff(product_form, fluence)
+    cf * ff
+  }
+
+  # (4) SD 계산
+  calc_sd <- function(product_form) {
     1
   }
 
-  # (4) TTS 계산
-  calc_tts <- function(form, cu, ni, flu) {
-    # 각 인수 검증은 함수 호출에서 수행함
-    cf <- calc_cf(form, cu, ni)
-    ff <- calc_ff(form, flu)
-    cf * ff
-  }
 
   #-------------------------------#
   # 4) switch(output)에 따라 계산

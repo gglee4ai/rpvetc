@@ -1,6 +1,6 @@
 #' E900_15
 #'
-#' Provide TTS (TTS1+TTS2) or SD of ASTM E900-15e2, vectorized.
+#' Provide TTS (TTS1+TTS2) or SD of ASTM E900-15e2.
 #'
 #' @param product_form character vector c("F","P","W").
 #' @param Cu numeric vector, wt%
@@ -16,7 +16,7 @@
 #' @export
 #'
 #' @examples
-#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18)
+#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18) # should be 31.74387
 #'
 E900_15 <- function(product_form,
                     Cu,
@@ -74,7 +74,7 @@ E900_15 <- function(product_form,
   }
 
   #------------------------------------#
-  # 3) 벡터 길이 및 확장
+  # 2) 입력값 길이 검사
   #------------------------------------#
   arg_list <- list(product_form, Cu, Ni, Mn, P, temperature, fluence)
   arg_len <- sapply(arg_list, length)
@@ -83,6 +83,7 @@ E900_15 <- function(product_form,
   # 길이가 1, max_len 두 가지 경우만 허용
   stopifnot(all(arg_len %in% c(1L, max_len)))
 
+  # 벡터 길이 확장
   replicate_to_max <- function(x, max_len) {
     if (length(x) < max_len) rep(x, length.out = max_len) else x
   }
@@ -95,7 +96,7 @@ E900_15 <- function(product_form,
   fluence <- replicate_to_max(fluence, max_len)
 
   #------------------------------------#
-  # 4) 보조 함수: TTS1, TTS2, SD
+  # 4) 주요 계산 함수들
   #    - 모두 "temperature"를 섭씨로 취급
   #------------------------------------#
 
@@ -107,8 +108,7 @@ E900_15 <- function(product_form,
     out <- out * ((0.09 + P / 0.012)^0.216)
     out <- out * ((1.66 + (Ni^8.54) / 0.63)^0.39)
     out <- out * ((Mn / 1.36)^0.3)
-    out <- out * (5 / 9) # 최종 결과는 degC
-    unname(out)
+    out * (5 / 9) # 최종 결과는 degC
   }
 
   # TTS2
@@ -119,24 +119,21 @@ E900_15 <- function(product_form,
     M <- M * ((0.1 + P / 0.012)^(-0.098))
     M <- M * ((0.168 + (Ni^0.58) / 0.63)^0.73)
     out <- pmax(pmin(Cu, 0.28) - 0.053, 0) * M
-    out <- out * (5 / 9) # 최종 결과는 degC
-    unname(out)
+    out * (5 / 9) # 최종 결과는 degC
   }
 
   # TTS = TTS1 + TTS2
   calc_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
     tts1 <- calc_tts1(product_form, Ni, Mn, P, temperature, fluence)
     tts2 <- calc_tts2(product_form, Cu, Ni, P, temperature, fluence)
-    out <- tts1 + tts2
-    unname(out) # 최종 결과는 degC
+    tts1 + tts2 # 최종 결과는 degC
   }
 
   # SD
   calc_sd <- function(product_form, TTS) {
     C <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
     D <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
-    out <- C * (TTS^D)
-    unname(out) # 최종 결과는 degC
+    C * (TTS^D) # 최종 결과는 degC
   }
 
   #------------------------------------#

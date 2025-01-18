@@ -17,7 +17,7 @@
 #' @export
 #'
 #' @examples
-#' RG199R2("B", 0.2, 0.18, 2.56894e18) # should be 31.74387
+#' RG199R2("B", 0.2, 0.2, 1e19, temperature_unit = "F") # should be 102
 #'
 RG199R2 <- function(
     product_form = NULL,
@@ -55,16 +55,9 @@ RG199R2 <- function(
     fluence <- SV_flu
   }
 
-  #------------------------#
-  # 4) 길이 확장(벡터)
-  #------------------------#
-  replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) {
-      return(x)
-    }
-    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
-  }
-
+  #------------------------------------#
+  # 4) 입력값 길이 검사
+  #------------------------------------#
   # 필요한 인자들의 길이 파악
   arg_list <- list(product_form, Cu, Ni, fluence, CF)
   arg_len <- sapply(arg_list, function(x) if (is.null(x)) 0 else length(x))
@@ -75,16 +68,23 @@ RG199R2 <- function(
     stop("product_form, Cu, Ni, fluence, and CF must have length 1 or max length.")
   }
 
-  # 일괄 확장
+  # 벡터 길이 확장
+  replicate_to_max <- function(x, max_len) {
+    if (is.null(x)) {
+      return(x)
+    }
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
+  }
   product_form <- replicate_to_max(product_form, max_len)
   Cu <- replicate_to_max(Cu, max_len)
   Ni <- replicate_to_max(Ni, max_len)
   fluence <- replicate_to_max(fluence, max_len)
   CF <- replicate_to_max(CF, max_len)
 
-  #------------------------#
-  # 5) 보조 함수 정의
-  #------------------------#
+  #------------------------------------#
+  # 5) 주요 계산 함수들
+  #    - 모두 "temperature"를 화씨로 취급
+  #------------------------------------#
   # 5-1) calc_cf_by_sv: 감시시험편으로 CF 추정
   calc_cf_by_sv <- function(SV_flu, SV_tts) {
     stopifnot(is.numeric(SV_flu), is.numeric(SV_tts))
@@ -95,8 +95,7 @@ RG199R2 <- function(
     fl <- SV_flu / 1e19
     ff <- fl^(0.28 - 0.1 * log10(fl))
     ff2 <- ff^2
-    out <- sum(ff * SV_tts) / sum(ff2)
-    unname(out)
+    sum(ff * SV_tts) / sum(ff2)
   }
 
   # 5-2) calc_cf_table: RG1.99 Rev.2 표(베이스 vs 웰드)에서 CF(°F) 산출
@@ -140,11 +139,20 @@ RG199R2 <- function(
   # 5-4) calc_ff: fluence factor(무단위)
   calc_ff <- function(fluence) {
     stopifnot(is.numeric(fluence), all(fluence >= 0))
+
     fl <- fluence / 1e19
     fl^(0.28 - 0.1 * log10(fl))
   }
 
-  # 5-5) calc_sd: SD(°F) (예시로 4 고정)
+  # 5-5) TTS 계산
+  calc_tts <- function(product_form, Cu, Ni, fluence, CF, SV_flu, SV_tts) {
+    # 각 인수 검증은 함수 호출에서 수행함
+    cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
+    ff <- calc_ff(fluence)
+    cf * ff
+  }
+
+  # 5-6) calc_sd: SD(°F) (예시로 4 고정)
   calc_sd <- function(product_form) {
     c("B" = 17, "W" = 28)[product_form]
   }
@@ -154,14 +162,8 @@ RG199R2 <- function(
   result <- switch(output,
     "CF" = calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts),
     "FF" = calc_ff(fluence),
-    "TTS" = {
-      cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
-      ff <- calc_ff(fluence)
-      cf * ff
-    },
-    "SD" = {
-      calc_sd(product_form)
-    }
+    "TTS" = calc_tts(product_form, Cu, Ni, fluence, CF, SV_flu, SV_tts),
+    "SD" = calc_sd(product_form)
   )
 
   #------------------------------------#

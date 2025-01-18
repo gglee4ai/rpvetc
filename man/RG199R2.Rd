@@ -45,6 +45,6 @@ various value according to output
 Provide TTS or CF of Regulatory Guide 1.99 Rev. 2 tables
 }
 \examples{
-RG199R2("B", 0.2, 0.18, 2.56894e18) # should be 31.74387
+RG199R2("B", 0.2, 0.2, 1e19, temperature_unit = "F") # should be 102
 
 }

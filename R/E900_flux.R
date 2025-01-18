@@ -17,7 +17,7 @@
 #' @export
 #'
 #' @examples
-#' E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.74387
+#' E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.81079
 #'
 E900_flux <- function(product_form,
                       Cu,
@@ -57,7 +57,7 @@ E900_flux <- function(product_form,
   }
 
   #------------------------------------#
-  # 3) 벡터 길이 및 확장
+  # 2) 입력값 길이 검사
   #------------------------------------#
   arg_list <- list(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
   arg_len <- sapply(arg_list, length)
@@ -80,7 +80,7 @@ E900_flux <- function(product_form,
   flux <- replicate_to_max(flux, max_len)
 
   #------------------------------------#
-  # 4) 보조 함수: TTS1, TTS2, SD
+  # 4) 주요 계산 함수들
   #    - 모두 "temperature"를 섭씨로 취급
   #------------------------------------#
 
@@ -94,8 +94,7 @@ E900_flux <- function(product_form,
     out <- out * (0.29 + (Ni^17.63) / 0.63)^0.107
     out <- out * (Mn / 1.36)^0.44
     out <- out * (log10flux / 11.8)^1.64
-    out <- out * (5 / 9) # 최종 결과는 degC
-    unname(out)
+    out * (5 / 9) # 최종 결과는 degC
   }
 
   # TTS2
@@ -108,24 +107,22 @@ E900_flux <- function(product_form,
     M <- M * (0.705 + (Ni^0.64) / 0.63)^1.24
     M <- M * (log10flux / 15.9)^-0.52
     out <- pmax(pmin(Cu, 0.30) - 0.046, 0) * M
-    out <- out * (5 / 9) # 최종 결과는 degC
-    unname(out)
+    out * (5 / 9) # 최종 결과는 degC
   }
 
   # TTS = TTS1 + TTS2
   calc_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence, flux) {
     tts1 <- calc_tts1(product_form, Ni, Mn, P, temperature, fluence, flux)
     tts2 <- calc_tts2(product_form, Cu, Ni, P, temperature, fluence, flux)
-    out <- tts1 + tts2
-    unname(out) # 최종 결과는 degC
+    tts1 + tts2 # 최종 결과는 degC
+    # 최종 결과는 degC
   }
 
   # SD 계산
   calc_sd <- function(product_form, TTS) {
     C <- c("F" = 6.818, "P" = 6.293, "W" = 6.862)[product_form]
     D <- c("F" = 0.238, "P" = 0.202, "W" = 0.237)[product_form]
-    out <- C * TTS^D
-    unname(out) # 최종 결과는 degC
+    C * TTS^D # 최종 결과는 degC
   }
 
   #------------------------------------#

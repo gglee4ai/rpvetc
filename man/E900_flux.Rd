@@ -45,6 +45,6 @@ numeric vector (°C or °F) of TTS / TTS1 / TTS2 / SD
 Provide TTS or SD of ASTM E900-15e2 upgraded in MRP-462.
 }
 \examples{
-E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.74387
+E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.81079
 
 }
