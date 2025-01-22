@@ -36,8 +36,8 @@ CR3391 <- function(product_form = NULL,
   #--------------------------#
   #  - "B","F","P","W" 중 하나이며, F/P는 B로 통합
   if (!is.null(product_form)) {
+    product_form <- as.character(product_form)
     stopifnot(all(product_form %in% c("B", "F", "P", "W")))
-    # F, P → B
     product_form[product_form %in% c("F", "P")] <- "B"
   }
 

@@ -37,6 +37,11 @@ RG199R2 <- function(
   #------------------------#
   output <- match.arg(output)
   temperature_unit <- match.arg(temperature_unit)
+  if (!is.null(product_form)) {
+    product_form <- as.character(product_form)
+    stopifnot(all(product_form %in% c("B", "F", "P", "W")))
+    product_form[product_form %in% c("F", "P")] <- "B"
+  }
 
   #------------------------#
   # 2) 계산용 온도차를 화씨로 변환
@@ -102,14 +107,13 @@ RG199R2 <- function(
 
   # 5-2) calc_cf_table: RG1.99 Rev.2 표에서 CF(°F) 산출
   calc_cf_table <- function(product_form, Cu, Ni) {
-    stopifnot(all(product_form %in% c("B", "F", "P", "W"))) # character or factor
     stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
     stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
 
     mapply(function(pf, cu, ni) {
-      if (pf %in% c("B", "F", "P")) {
+      if (pf == "B") {
         rg199r2_CF_base(cu, ni) # 표 기반
-      } else {
+      } else { # pf == "W"
         rg199r2_CF_weld(cu, ni) # 표 기반
       }
     }, product_form, Cu, Ni, SIMPLIFY = TRUE)
@@ -149,9 +153,6 @@ RG199R2 <- function(
 
   # 5-6) calc_sd: SD(°F)
   calc_sd <- function(product_form, SV_flu, SV_tts) {
-    stopifnot(all(product_form %in% c("B", "F", "P", "W")))
-    product_form[product_form %in% c("F", "P")] <- "B"
-
     base_weld <- c("B" = 17, "W" = 28)
     # case 1: product_form 만 있을 때
     if (is.null(SV_flu) && is.null(SV_tts)) {
