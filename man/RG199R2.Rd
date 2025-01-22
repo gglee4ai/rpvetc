@@ -9,10 +9,11 @@ RG199R2(
   Cu = NULL,
   Ni = NULL,
   fluence = NULL,
+  CF = NULL,
+  SD = NULL,
   SV_flu = NULL,
   SV_tts = NULL,
-  CF = NULL,
-  output = c("TTS", "CF", "FF", "SD"),
+  output = c("TTS", "CF", "FF", "SD", "Margin"),
   temperature_unit = c("Celsius", "Fahrenheit"),
   verbose = FALSE
 )
@@ -26,13 +27,15 @@ RG199R2(
 
 \item{fluence}{numeric vector, n/cm2}
 
+\item{CF}{numeric vector, temperature unit}
+
+\item{SD}{numeric vector, temperature unit}
+
 \item{SV_flu}{numeric vector, n/cm2}
 
 \item{SV_tts}{numeric vector, temperature unit}
 
-\item{CF}{numeric vector, temperature unit}
-
-\item{output}{character c("TTS", "CF", "FF", "SD")}
+\item{output}{character c("TTS", "CF", "FF", "SD", "Margin")}
 
 \item{temperature_unit}{character c("Celsius", "Fahrenheit")}
 
