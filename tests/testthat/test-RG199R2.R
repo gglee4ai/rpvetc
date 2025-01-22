@@ -4,7 +4,7 @@ tts1 <- c(0, 100, 200, 250)
 flu2 <- c(0.54, 1.12, 1.23, 2.94, 3.89, 5.52) * 1e19 # Kori1 F1
 tts2 <- c(-9.27, -11.05, 3.12, 12.80, 24.03, 37.56) #
 
-fRG199R2 <- function(...) RG199R2(..., temperature_unit = "F")
+fRG199R2 <- function(..., temperature_unit = "F") RG199R2(..., temperature_unit = temperature_unit)
 
 # case: 1
 test_that("1", {
@@ -96,3 +96,42 @@ test_that("SV로 CF 계산후, fluence로 TTS 계산", {
   test1 <- fRG199R2(c("B", "W"), 0.1, 0.6, c(1e19), CF = 1, output = "CF")
   expect_equal(round(test1, 2), c(1, 1))
 })
+
+test_that("SD 1", {
+  test1 <- fRG199R2(c("B", "W"), output = "SD")
+  expect_equal(round(test1, 2), c(17, 28))
+})
+
+
+test_that("SD 2", {
+  test1 <- fRG199R2("B", fluence = 1:5 * 1e19, output = "SD")
+  expect_equal(round(test1, 2), c(17, 17, 17, 17, 17))
+})
+
+test_that("SD 2", {
+  test1 <- fRG199R2("B", output = "SD",
+                           SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200))
+  expect_equal(round(test1, 2), c(8.5, 8.5, 8.5))
+})
+
+
+fRG199R2("B", fluence = 1:5 * 1e19, output = "SD")
+fRG199R2("B",
+        output = "SD",
+        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
+)
+
+fRG199R2("W", CF = 1, output = "Margin", fluence = 1:5 * 1e19)
+fRG199R2("W",
+        CF = 1, output = "Margin", fluence = 1:5 * 1e19,
+        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
+)
+fRG199R2("W",
+        CF = 1, output = "SD", fluence = 1:5 * 1e19,
+        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
+)
+fRG199R2("W",
+        CF = 1, output = "CF", fluence = 1:5 * 1e19,
+        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
+)
+

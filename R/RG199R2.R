@@ -7,9 +7,10 @@
 #' @param Ni numeric vector, wt%
 #' @param fluence numeric vector, n/cm2
 #' @param CF numeric vector, temperature unit
+#' @param SD numeric vector, temperature unit
 #' @param SV_flu numeric vector, n/cm2
 #' @param SV_tts numeric vector, temperature unit
-#' @param output character c("TTS", "CF", "FF", "SD")
+#' @param output character c("TTS", "CF", "FF", "SD", "Margin")
 #' @param temperature_unit character c("Celsius", "Fahrenheit")
 #' @param verbose logical TRUE or FALSE
 #'
@@ -20,14 +21,15 @@
 #' RG199R2("B", 0.2, 0.2, 1e19, temperature_unit = "F") # should be 102
 #'
 RG199R2 <- function(
-    product_form = NULL,
-    Cu = NULL,
-    Ni = NULL,
-    fluence = NULL,
-    SV_flu = NULL,
-    SV_tts = NULL,
-    CF = NULL,
-    output = c("TTS", "CF", "FF", "SD"),
+    product_form = NULL, # for CF
+    Cu = NULL, # for CF
+    Ni = NULL, # for CF
+    fluence = NULL, # for FF, TTS, Margin
+    CF = NULL, # for FF, TTS, Margin
+    SD = NULL, # for Margin
+    SV_flu = NULL, # for CF, SD
+    SV_tts = NULL, # for CF, SD
+    output = c("TTS", "CF", "FF", "SD", "Margin"),
     temperature_unit = c("Celsius", "Fahrenheit"),
     verbose = FALSE) {
   #------------------------#
@@ -46,12 +48,15 @@ RG199R2 <- function(
     if (!is.null(CF) && is.numeric(CF)) {
       CF <- CF * (9 / 5)
     }
+    if (!is.null(SD) && is.numeric(SD)) {
+      SD <- SD * (9 / 5)
+    }
   }
 
   #------------------------#
-  # 3) SV_flu가 있으면, fluence를 대체
+  # 3) SV_flu가 있고 fluence가 없으면 fluence를 대체
   #------------------------#
-  if (!is.null(SV_flu) && is.null(fluence)) {
+  if (is.numeric(SV_flu) && is.null(fluence)) {
     fluence <- SV_flu
   }
 
@@ -59,49 +64,45 @@ RG199R2 <- function(
   # 4) 입력값 길이 검사
   #------------------------------------#
   # 필요한 인자들의 길이 파악
-  arg_list <- list(product_form, Cu, Ni, fluence, CF)
-  arg_len <- sapply(arg_list, function(x) if (is.null(x)) 0 else length(x))
+  arg_list <- list(product_form, Cu, Ni, fluence, CF, SD)
+  arg_len <- sapply(arg_list, length)
   max_len <- max(arg_len)
 
-  # 길이가 1, max_len 두 가지 경우만 허용
+  # 길이가 0 (NULL), 1, max_len 세 가지 경우만 허용
   if (!all(arg_len %in% c(0, 1, max_len))) {
-    stop("product_form, Cu, Ni, fluence, and CF must have length 1 or max length.")
+    stop("product_form, Cu, Ni, fluence, CF and SD must have length 0, 1 or max length.")
   }
 
   # 벡터 길이 확장
   replicate_to_max <- function(x, max_len) {
-    if (is.null(x)) {
-      return(x)
-    }
-    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
+    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x # 길이 1개는 max_len으로 확장
   }
   product_form <- replicate_to_max(product_form, max_len)
   Cu <- replicate_to_max(Cu, max_len)
   Ni <- replicate_to_max(Ni, max_len)
   fluence <- replicate_to_max(fluence, max_len)
   CF <- replicate_to_max(CF, max_len)
+  SD <- replicate_to_max(SD, max_len)
 
   #------------------------------------#
   # 5) 주요 계산 함수들
   #    - 모두 "temperature"를 화씨로 취급
   #------------------------------------#
-  # 5-1) calc_cf_by_sv: 감시시험편으로 CF 추정
+  # 5-1) calc_cf_by_sv: 감시시험 자료로 CF 추정
   calc_cf_by_sv <- function(SV_flu, SV_tts) {
     stopifnot(is.numeric(SV_flu), is.numeric(SV_tts))
     stopifnot(length(SV_flu) == length(SV_tts))
     stopifnot(all(SV_tts[SV_flu == 0] == 0))
     stopifnot((sum(SV_flu > 0) >= 2)) # SV 2개 이상만 적용
 
-    fl <- SV_flu / 1e19
-    ff <- fl^(0.28 - 0.1 * log10(fl))
+    ff <- calc_ff(SV_flu)
     ff2 <- ff^2
-    sum(ff * SV_tts) / sum(ff2)
+    sum(ff * SV_tts) / sum(ff2) # 단일 CF 값 반환
   }
 
-  # 5-2) calc_cf_table: RG1.99 Rev.2 표(베이스 vs 웰드)에서 CF(°F) 산출
+  # 5-2) calc_cf_table: RG1.99 Rev.2 표에서 CF(°F) 산출
   calc_cf_table <- function(product_form, Cu, Ni) {
-    stopifnot(is.character(product_form))
-    stopifnot(all(product_form %in% c("B", "F", "P", "W")))
+    stopifnot(all(product_form %in% c("B", "F", "P", "W"))) # character or factor
     stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
     stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
 
@@ -117,18 +118,15 @@ RG199R2 <- function(
   # 5-3) calc_cf: 최종 CF 결정(°F)
   calc_cf <- function(product_form, Cu, Ni, CF, SV_flu, SV_tts) {
     # Case 1: CF 직접
-    if (!is.null(CF)) {
-      stopifnot(is.numeric(CF), all(CF >= 0))
+    if (is.numeric(CF) && all(CF >= 0)) {
       if (verbose) message("Case 1: Using direct CF input.")
       return(CF)
     }
 
     # Case 2: SV 데이터(감시시험)로부터 CF 추정
-    if (!is.null(SV_flu) && !is.null(SV_tts)) {
-      if (is.numeric(SV_flu) && sum(SV_flu > 0) >= 2) {
-        if (verbose) message("Case 2: Using SV data to estimate CF.")
-        return(calc_cf_by_sv(SV_flu, SV_tts))
-      }
+    if (is.numeric(SV_flu) && sum(SV_flu > 0) >= 2) {
+      if (verbose) message("Case 2: Using SV data to estimate CF.")
+      return(calc_cf_by_sv(SV_flu, SV_tts))
     }
 
     # Case 3: Table로 계산
@@ -144,26 +142,62 @@ RG199R2 <- function(
     fl^(0.28 - 0.1 * log10(fl))
   }
 
-  # 5-5) TTS 계산
-  calc_tts <- function(product_form, Cu, Ni, fluence, CF, SV_flu, SV_tts) {
-    # 각 인수 검증은 함수 호출에서 수행함
-    cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
-    ff <- calc_ff(fluence)
-    cf * ff
+  # 5-5) TTS 계산(°F)
+  calc_tts <- function(CF, fluence) {
+    CF * calc_ff(fluence)
   }
 
-  # 5-6) calc_sd: SD(°F) (예시로 4 고정)
-  calc_sd <- function(product_form) {
-    c("B" = 17, "W" = 28)[product_form]
+  # 5-6) calc_sd: SD(°F)
+  calc_sd <- function(product_form, SV_flu, SV_tts) {
+    stopifnot(all(product_form %in% c("B", "F", "P", "W")))
+    product_form[product_form %in% c("F", "P")] <- "B"
+
+    base_weld <- c("B" = 17, "W" = 28)
+    # case 1: product_form 만 있을 때
+    if (is.null(SV_flu) && is.null(SV_tts)) {
+      sd <- base_weld[product_form]
+      return(sd)
+    }
+
+    # case 2: SV_flu, SV_tts가 있을때
+    unique_form <- unique(product_form)
+    stopifnot(length(unique_form) == 1) # 모두 "B" 또는 "W"
+
+    cf <- calc_cf_by_sv(SV_flu, SV_tts) # 단일 cf
+    best_tts <- cf * calc_ff(SV_flu)
+    scatter <- abs(SV_tts - best_tts)
+    max_scatter <- max(scatter)
+
+    threshold <- base_weld[unique_form]  # 17 or 28
+    half_val  <- threshold / 2          # 8.5 or 14
+    sd <- if (max_scatter > threshold) threshold else half_val
+
+    # 단일 sd를 product_form 길이 만큼 확장
+    sd <- rep(sd, length(product_form))
+    return(sd)
   }
 
+  calc_margin <- function(cf, fluence, sd) {
+    stopifnot(is.numeric(sd)) # sd는 반드시 넷 중의 하나
+    tts <- cf * calc_ff(fluence)
+    margin <- 2 * sd # = 2 * sqrt(sd^2) # Initial RTNDT가 있을 경우
+    ifelse(margin > tts, tts, margin) # margin은 TTS를 초과할 수 없다
+  }
 
   # 결과 선택
   result <- switch(output,
     "CF" = calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts),
     "FF" = calc_ff(fluence),
-    "TTS" = calc_tts(product_form, Cu, Ni, fluence, CF, SV_flu, SV_tts),
-    "SD" = calc_sd(product_form)
+    "TTS" = {
+      cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
+      calc_tts(cf, fluence)
+    },
+    "SD" = calc_sd(product_form, SV_flu, SV_tts),
+    "Margin" = {
+      cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
+      sd <- calc_sd(product_form, SV_flu, SV_tts)
+      calc_margin(cf, fluence, sd)
+    }
   )
 
   #------------------------------------#
