@@ -2,24 +2,34 @@
 % Please edit documentation in R/RG199R2.R
 \name{linear_interpolate_2d}
 \alias{linear_interpolate_2d}
-\title{linear_interpolate_2d}
+\title{2D Linear Interpolation}
 \usage{
 linear_interpolate_2d(x_values, y_values, table, x, y)
 }
 \arguments{
-\item{x_values, }{numeric vector, x축 값들}
+\item{x_values}{numeric vector, values along the x-axis (columns of the table).}
 
-\item{y_values, }{numeric vector, y축 값들}
+\item{y_values}{numeric vector, values along the y-axis (rows of the table).}
 
-\item{table, }{numeric matrix, 2D 테이블 (행: y축, 열: x축)}
+\item{table}{numeric matrix, 2D table containing the data values. Rows correspond to \code{y_values}, columns to \code{x_values}.}
 
-\item{x, }{numeric, 보간하려는 x 지점}
+\item{x}{numeric, the x-coordinate at which to interpolate. Must be within the range of \code{x_values}.}
 
-\item{y, }{numeric, 보간하려는 y 지점}
+\item{y}{numeric, the y-coordinate at which to interpolate. Must be within the range of \code{y_values}.}
 }
 \value{
-interpoated value
+Numeric value representing the interpolated result.
 }
 \description{
-Provide interpolated value from 2D table (not vectorized).
+Computes the interpolated value at a given \code{x} and \code{y} coordinate from a 2D table.
+The table must have \code{x_values} along the columns and \code{y_values} along the rows.
+This function is not vectorized and handles a single pair of \code{x} and \code{y} values.
+}
+\examples{
+# Example: Interpolating from a 2D table
+x_vals <- seq(0, 1, 0.5)
+y_vals <- seq(0, 1, 0.5)
+table <- matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9), nrow = 3, byrow = TRUE)
+rpvetc:::linear_interpolate_2d(x_vals, y_vals, table, 0.25, 0.75)
+
 }

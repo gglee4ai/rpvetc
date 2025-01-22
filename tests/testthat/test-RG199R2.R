@@ -114,24 +114,45 @@ test_that("SD 2", {
   expect_equal(round(test1, 2), c(8.5, 8.5, 8.5))
 })
 
+test_that("SD 2", {
+  test1 <- fRG199R2("B", fluence = 1:5 * 1e19, output = "SD")
+  expect_equal(round(test1, 2), c(17, 17, 17, 17, 17))
+})
 
-fRG199R2("B", fluence = 1:5 * 1e19, output = "SD")
-fRG199R2("B",
-        output = "SD",
-        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
-)
+test_that("SD 2", {
+  test1 <- fRG199R2("B",
+                    output = "SD",
+                    SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
+  )
+  expect_equal(round(test1, 2), c(8.5, 8.5, 8.5))
+})
 
-fRG199R2("W", CF = 1, output = "Margin", fluence = 1:5 * 1e19)
-fRG199R2("W",
-        CF = 1, output = "Margin", fluence = 1:5 * 1e19,
-        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
-)
-fRG199R2("W",
-        CF = 1, output = "SD", fluence = 1:5 * 1e19,
-        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
-)
-fRG199R2("W",
-        CF = 1, output = "CF", fluence = 1:5 * 1e19,
-        SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
-)
+
+test_that("SD 2", {
+  test1 <- fRG199R2("W",
+                    CF = 1, output = "SD",
+                    fluence = 1:5 * 1e19,
+                    SV_flu = c(1e18, 1e19, 1e20), SV_tts = c(50, 142, 200)
+  )
+  expect_equal(round(test1, 2), c(14, 14, 14, 14, 14))
+})
+
+
+test_that("SD 2", {
+  test1 <- fRG199R2("B", fluence = 1:5 * 1e19, output = "SD")
+  expect_equal(round(test1, 2), c(17, 17, 17, 17, 17))
+})
+
+
+test_that("SD 2", {
+  df <- data.frame(
+    cf = c(35.8, 10.35, 58.29, 26, 173.33, 199.66, 176.63),
+    fluence = 3.71e19,
+    sd = c(17, 8.5, 8.5, 17, 28, 28, 28)
+  )
+  test1 <- with(df, fRG199R2(CF = cf, fluence = fluence, SD = sd, output = "Margin"))
+  expect_equal(round(test1, 2), c(34, 13.87, 17, 34, 56, 56, 56))
+})
+
+
 
