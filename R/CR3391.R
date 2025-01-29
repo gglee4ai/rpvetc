@@ -1,24 +1,53 @@
-#' CR3391
+#' Guthrie's Model (NUREG/CR-3391) Calculations
 #'
-#' Provide TTS, CF, FF, or SD of Guthrie's model in NUREG/CR3391 (1983).
+#' Computes Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), or Standard Deviation (SD)
+#' based on Guthrie's embrittlement model described in NUREG/CR-3391 (1983).
 #'
-#' @param product_form character vector. One of c("B", "F", "P", "W").
-#' @param Cu numeric vector, wt% (0~100)
-#' @param Ni numeric vector, wt% (0~100)
-#' @param fluence numeric vector n/cm2 (0 이상)
-#' @param output character c("TTS", "CF", "FF", "SD")
-#' @param temperature_unit character c("Celsius", "Fahrenheit")
+#' This function provides calculations for base and weld metals using different empirical formulas
+#' depending on material properties such as copper (Cu) and nickel (Ni) content, and neutron fluence.
 #'
-#' @return A numeric vector corresponding to \code{output} in the specified \code{temperature_unit}.
-#' @export
+#' @param product_form character vector, specifying the product form. Must be one of:
+#'        \itemize{
+#'          \item \code{"B"} - Base metal
+#'          \item \code{"F"} - Forgings (treated as \code{"B"})
+#'          \item \code{"P"} - Plate (treated as \code{"B"})
+#'          \item \code{"W"} - Weld metal
+#'        }
+#' @param Cu numeric vector, copper content in weight percent (wt%). Must be between 0 and 100.
+#' @param Ni numeric vector, nickel content in weight percent (wt%). Must be between 0 and 100.
+#' @param fluence numeric vector, neutron fluence in n/cm². Must be non-negative.
+#' @param output character, specifying which property to compute. Must be one of:
+#'        \itemize{
+#'          \item \code{"TTS"} - Temperature Transition Shift
+#'          \item \code{"CF"} - Chemistry Factor
+#'          \item \code{"FF"} - Fluence Factor
+#'          \item \code{"SD"} - Standard Deviation of the TTS estimation
+#'        }
+#' @param temperature_unit character, specifying the output temperature unit. Must be one of:
+#'        \itemize{
+#'          \item \code{"Celsius"} - Returns the result in degrees Celsius.
+#'          \item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
+#'        }
+#'
+#' @return A numeric vector containing the computed result based on the selected \code{output} parameter.
+#'         The unit depends on \code{temperature_unit}, except for Fluence Factor (\code{"FF"}), which is unitless.
 #'
 #' @examples
-#' # 1) TTS 계산 (모든 인자 필요)
-#' CR3391(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19)
+#' # Example 1: Compute TTS for a base metal
+#' CR3391(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19, output = "TTS")
 #'
-#' # 2) FF만 계산 (Cu, Ni 불필요)
-#' CR3391(product_form = "F", fluence = 1e19, output = "FF")
+#' # Example 2: Compute CF (Chemistry Factor)
+#' CR3391(product_form = "W", Cu = 0.2, Ni = 0.5, output = "CF")
 #'
+#' # Example 3: Compute FF (Fluence Factor) with only fluence
+#' CR3391(fluence = 1e19, output = "FF")
+#'
+#' # Example 4: Compute SD (Standard Deviation) for base metal
+#' CR3391(product_form = "B", output = "SD")
+#'
+#' @seealso \code{\link{NP3319}}, \code{\link{RG199R2}}
+#'
+#' @export
 CR3391 <- function(product_form = NULL,
                    Cu = NULL,
                    Ni = NULL,

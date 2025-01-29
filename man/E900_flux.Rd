@@ -2,7 +2,7 @@
 % Please edit documentation in R/E900_flux.R
 \name{E900_flux}
 \alias{E900_flux}
-\title{E900_flux}
+\title{ASTM E900-15e2 with MRP-462 (2021) Flux Effect on Transition Temperature Shift (TTS)}
 \usage{
 E900_flux(
   product_form,
@@ -18,33 +18,72 @@ E900_flux(
 )
 }
 \arguments{
-\item{product_form}{character vector c("F", "P", "W")}
+\item{product_form}{character vector, specifying the product form. Must be one of:
+\itemize{
+\item \code{"F"} - Forgings
+\item \code{"P"} - Plate
+\item \code{"W"} - Weld metal
+}}
 
-\item{Cu}{numeric vector, wt\%}
+\item{Cu}{numeric vector, copper content in weight percent (wt\%). Used in TTS2 calculation.}
 
-\item{Ni}{numeric vector, wt\%}
+\item{Ni}{numeric vector, nickel content in weight percent (wt\%). Used in both TTS1 and TTS2 calculations.}
 
-\item{Mn}{numeric vector, wt\%}
+\item{Mn}{numeric vector, manganese content in weight percent (wt\%). Used in TTS1 calculation.}
 
-\item{P}{numeric vector, wt\%}
+\item{P}{numeric vector, phosphorus content in weight percent (wt\%). Used in both TTS1 and TTS2 calculations.}
 
-\item{temperature}{numeric vector (°C or °F)}
+\item{temperature}{numeric vector, reactor operating temperature in degrees Celsius (°C) or Fahrenheit (°F).
+The unit should be specified using \code{temperature_unit}.}
 
-\item{fluence}{numeric vector, n/cm2}
+\item{fluence}{numeric vector, neutron fluence in n/cm². Must be non-negative.}
 
-\item{flux}{numeric vector, n/cm2/s}
+\item{flux}{numeric vector, neutron flux in n/cm²/s. Must be positive.}
 
-\item{output}{character c("TTS", "TTS1", "TTS2", "SD")}
+\item{output}{character, specifying which property to compute. Must be one of:
+\itemize{
+\item \code{"TTS"}  - Total Transition Temperature Shift (TTS1 + TTS2)
+\item \code{"TTS1"} - First component of TTS, incorporating flux effects
+\item \code{"TTS2"} - Second component of TTS, incorporating flux effects
+\item \code{"SD"}   - Standard Deviation of the TTS estimation
+}}
 
-\item{temperature_unit}{character c("Celsius", "Fahrenheit")}
+\item{temperature_unit}{character, specifying the input and output temperature unit. Must be one of:
+\itemize{
+\item \code{"Celsius"} - Returns the result in degrees Celsius.
+\item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
+}}
 }
 \value{
-numeric vector (°C or °F) of TTS / TTS1 / TTS2 / SD
+A numeric vector representing the computed result in the specified \code{temperature_unit}.
+The value corresponds to the selected \code{output} parameter (TTS, TTS1, TTS2, or SD).
 }
 \description{
-Provide TTS (TTS1+TTS2) or SD of ASTM E900-15e2 upgraded in MRP-462 (2021).
+Computes the Transition Temperature Shift (TTS) components (TTS1, TTS2) or Standard Deviation (SD)
+based on the upgraded ASTM E900-15e2 embrittlement model, as modified in MRP-462 (2021) to incorporate
+flux effects on embrittlement.
+}
+\details{
+The function calculates embrittlement effects in reactor pressure vessel materials using neutron fluence,
+neutron flux, and material properties. The model introduces flux-dependent terms to improve accuracy.
 }
 \examples{
-E900_flux("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, 1e13) # should be 31.81079
+# Example 1: Compute total TTS for a plate material with flux effect
+E900_flux("P", Cu = 0.2, Ni = 0.18, Mn = 1.36, P = 0.012,
+          temperature = 290, fluence = 2.56894e18, flux = 1e13,
+          output = "TTS", temperature_unit = "Celsius")
 
+# Example 2: Compute TTS1 component with flux effect
+E900_flux("F", Cu = 0.15, Ni = 0.2, Mn = 1.4, P = 0.01,
+          temperature = 300, fluence = 1e19, flux = 5e12,
+          output = "TTS1", temperature_unit = "Fahrenheit")
+
+# Example 3: Compute Standard Deviation (SD) for a weld metal under flux effect
+E900_flux("W", Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
+          temperature = 275, fluence = 5e18, flux = 2e13,
+          output = "SD", temperature_unit = "Celsius")
+
+}
+\seealso{
+\code{\link{E900_15}}
 }

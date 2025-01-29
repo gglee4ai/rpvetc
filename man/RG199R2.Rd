@@ -30,7 +30,7 @@ If \code{"F"} or \code{"P"} are provided, they are treated as \code{"B"}.}
 
 \item{CF}{numeric vector, chemistry factor in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data or tabulated values.}
 
-\item{SD}{numeric vector, sigma delta in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data.}
+\item{SD}{numeric vector, standard deviation in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data.}
 
 \item{SV_flu}{numeric vector, neutron fluence in n/cm² from surveillance test data. Required if CF or SD are to be estimated from surveillance data.}
 
@@ -41,7 +41,7 @@ If \code{"F"} or \code{"P"} are provided, they are treated as \code{"B"}.}
 \item \code{"TTS"} - Temperature Transition Shift
 \item \code{"CF"} - Chemistry Factor
 \item \code{"FF"} - Fluence Factor
-\item \code{"SD"} - Sigma Delta
+\item \code{"SD"} - Standard Deviation
 \item \code{"Margin"} - Margin for radiation embrittlement assessment
 }}
 
@@ -59,7 +59,7 @@ The unit depends on \code{temperature_unit}, except for Fluence Factor (\code{"F
 }
 \description{
 Computes various material property adjustments based on the Regulatory Guide 1.99 Rev. 2 (1988),
-including Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), Sigma Delta (SD), and Margin.
+including Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Margin.
 }
 \details{
 This function integrates multiple models and equations to determine the most relevant material property,
@@ -81,6 +81,5 @@ RG199R2(product_form = "W", SV_flu = c(1e18, 5e19), SV_tts = c(10, 50),
 
 }
 \seealso{
-\code{\link{rg199r2_cf_table}}, \code{\link{rg199r2_cf_by_sv}},
-\code{\link{rg199r2_ff}}, \code{\link{rg199r2_tts}}, \code{\link{rg199r2_sd}}, \code{\link{rg199r2_margin}}
+\code{\link{CR3391}}, \code{\link{NP3319}}, \code{\link{E900_15}}
 }

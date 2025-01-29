@@ -3,7 +3,7 @@
 #' Regulatory Guide 1.99 Rev. 2 Calculations
 #'
 #' Computes various material property adjustments based on the Regulatory Guide 1.99 Rev. 2 (1988),
-#' including Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), Sigma Delta (SD), and Margin.
+#' including Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Margin.
 #'
 #' This function integrates multiple models and equations to determine the most relevant material property,
 #' given the user-provided parameters.
@@ -14,7 +14,7 @@
 #' @param Ni numeric vector, nickel content in weight percent (wt%). Used to compute CF if not provided directly.
 #' @param fluence numeric vector, neutron fluence in n/cm². Required for computing TTS, Margin, and FF.
 #' @param CF numeric vector, chemistry factor in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data or tabulated values.
-#' @param SD numeric vector, sigma delta in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data.
+#' @param SD numeric vector, standard deviation in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data.
 #' @param SV_flu numeric vector, neutron fluence in n/cm² from surveillance test data. Required if CF or SD are to be estimated from surveillance data.
 #' @param SV_tts numeric vector, temperature transition shift (TTS) in degrees Fahrenheit (°F) or Celsius (°C) from surveillance test data. Used in CF and SD estimation.
 #' @param output character, specifying which property to compute. Must be one of:
@@ -22,7 +22,7 @@
 #'          \item \code{"TTS"} - Temperature Transition Shift
 #'          \item \code{"CF"} - Chemistry Factor
 #'          \item \code{"FF"} - Fluence Factor
-#'          \item \code{"SD"} - Sigma Delta
+#'          \item \code{"SD"} - Standard Deviation
 #'          \item \code{"Margin"} - Margin for radiation embrittlement assessment
 #'        }
 #' @param temperature_unit character, specifying the output temperature unit. Must be one of:
@@ -49,8 +49,7 @@
 #' RG199R2(product_form = "W", SV_flu = c(1e18, 5e19), SV_tts = c(10, 50),
 #'         fluence = 1e19, output = "Margin", temperature_unit = "Fahrenheit", verbose = TRUE)
 #'
-#' @seealso \code{\link{rg199r2_cf_table}}, \code{\link{rg199r2_cf_by_sv}},
-#'          \code{\link{rg199r2_ff}}, \code{\link{rg199r2_tts}}, \code{\link{rg199r2_sd}}, \code{\link{rg199r2_margin}}
+#' @seealso \code{\link{CR3391}}, \code{\link{NP3319}}, \code{\link{E900_15}}
 #'
 #' @export
 RG199R2 <- function(
