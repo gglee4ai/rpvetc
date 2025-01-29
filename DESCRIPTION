@@ -1,6 +1,6 @@
 Package: rpvetc
 Title: Reactor Pressure Vessel Embrittlement Trend Curve
-Version: 2025.01
+Version: 1.0.0
 Authors@R: 
     person(given = "Gyeong-Geun",
            family = "LEE",

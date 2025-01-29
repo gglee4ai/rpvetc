@@ -2,7 +2,7 @@
 % Please edit documentation in R/RG199R2.R
 \name{RG199R2}
 \alias{RG199R2}
-\title{RG199R2}
+\title{Regulatory Guide 1.99 Rev. 2 Calculations}
 \usage{
 RG199R2(
   product_form = NULL,
@@ -19,35 +19,68 @@ RG199R2(
 )
 }
 \arguments{
-\item{product_form}{character vector, c("B", F", "P", "W")}
+\item{product_form}{character vector, specifying the product form. Must be one of \code{"B"} (base metal), \code{"F"} (forgings), \code{"P"} (plate), or \code{"W"} (weld metal).
+If \code{"F"} or \code{"P"} are provided, they are treated as \code{"B"}.}
 
-\item{Cu}{numeric vector, wt\%}
+\item{Cu}{numeric vector, copper content in weight percent (wt\%). Used to compute CF if not provided directly.}
 
-\item{Ni}{numeric vector, wt\%}
+\item{Ni}{numeric vector, nickel content in weight percent (wt\%). Used to compute CF if not provided directly.}
 
-\item{fluence}{numeric vector, n/cm2}
+\item{fluence}{numeric vector, neutron fluence in n/cm². Required for computing TTS, Margin, and FF.}
 
-\item{CF}{numeric vector, temperature unit}
+\item{CF}{numeric vector, chemistry factor in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data or tabulated values.}
 
-\item{SD}{numeric vector, temperature unit}
+\item{SD}{numeric vector, sigma delta in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data.}
 
-\item{SV_flu}{numeric vector, n/cm2}
+\item{SV_flu}{numeric vector, neutron fluence in n/cm² from surveillance test data. Required if CF or SD are to be estimated from surveillance data.}
 
-\item{SV_tts}{numeric vector, temperature unit}
+\item{SV_tts}{numeric vector, temperature transition shift (TTS) in degrees Fahrenheit (°F) or Celsius (°C) from surveillance test data. Used in CF and SD estimation.}
 
-\item{output}{character c("TTS", "CF", "FF", "SD", "Margin")}
+\item{output}{character, specifying which property to compute. Must be one of:
+\itemize{
+\item \code{"TTS"} - Temperature Transition Shift
+\item \code{"CF"} - Chemistry Factor
+\item \code{"FF"} - Fluence Factor
+\item \code{"SD"} - Sigma Delta
+\item \code{"Margin"} - Margin for radiation embrittlement assessment
+}}
 
-\item{temperature_unit}{character c("Celsius", "Fahrenheit")}
+\item{temperature_unit}{character, specifying the output temperature unit. Must be one of:
+\itemize{
+\item \code{"Celsius"} - Returns the result in degrees Celsius.
+\item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
+}}
 
-\item{verbose}{logical TRUE or FALSE}
+\item{verbose}{logical, if \code{TRUE}, additional messages will be printed to indicate which calculation method is used.}
 }
 \value{
-various value according to output
+A numeric vector containing the computed result based on the selected \code{output} parameter.
+The unit depends on \code{temperature_unit}, except for Fluence Factor (\code{"FF"}), which is unitless.
 }
 \description{
-Provide TTS, CF, FF, and SD of Regulatory Guide 1.99 Rev. 2 (1988).
+Computes various material property adjustments based on the Regulatory Guide 1.99 Rev. 2 (1988),
+including Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), Sigma Delta (SD), and Margin.
+}
+\details{
+This function integrates multiple models and equations to determine the most relevant material property,
+given the user-provided parameters.
 }
 \examples{
-RG199R2("B", 0.2, 0.2, 1e19, temperature_unit = "F") # should be 102
+# Example 1: Compute CF using tabulated values
+RG199R2("B", 0.2, 0.2, fluence = 1e19, output = "CF", temperature_unit = "Fahrenheit")
 
+# Example 2: Compute FF (Fluence Factor)
+RG199R2(fluence = 1e19, output = "FF")
+
+# Example 3: Compute TTS using CF and fluence
+RG199R2(CF = 100, fluence = 1e19, output = "TTS", temperature_unit = "Celsius")
+
+# Example 4: Compute Margin with surveillance test data
+RG199R2(product_form = "W", SV_flu = c(1e18, 5e19), SV_tts = c(10, 50),
+        fluence = 1e19, output = "Margin", temperature_unit = "Fahrenheit", verbose = TRUE)
+
+}
+\seealso{
+\code{\link{rg199r2_cf_table}}, \code{\link{rg199r2_cf_by_sv}},
+\code{\link{rg199r2_ff}}, \code{\link{rg199r2_tts}}, \code{\link{rg199r2_sd}}, \code{\link{rg199r2_margin}}
 }
