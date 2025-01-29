@@ -14,11 +14,13 @@ research models. This package is designed for engineers and researchers
 working in the field of nuclear materials, allowing them to assess the
 effects of neutron irradiation on RPV materials.
 
-The package includes various embrittlement models such as: -
-**Regulatory Guide 1.99 Rev. 2 (RG199R2)** - **NUREG/CR-3391
-(CR3391)** - **ASTM E900-15e2 (E900_15)** - **ASTM E900-15e2 with
-MRP-462 Flux Effects (E900_flux)** - **Odette’s Model in EPRI NP-3319
-(NP3319)**
+The package includes various embrittlement models such as:
+
+- **Regulatory Guide 1.99 Rev. 2 (RG199R2)**
+- **NUREG/CR-3391 (CR3391)**
+- **ASTM E900-15e2 (E900_15)**
+- **ASTM E900-15e2 with MRP-462 Flux Effects (E900_flux)**
+- **Odette’s Model in EPRI NP-3319 (NP3319)**
 
 ## Installation
 

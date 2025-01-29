@@ -25,6 +25,7 @@ based on multiple regulatory and research models. This package is designed for e
 working in the field of nuclear materials, allowing them to assess the effects of neutron irradiation on RPV materials.
 
 The package includes various embrittlement models such as:
+
 - **Regulatory Guide 1.99 Rev. 2 (RG199R2)**
 - **NUREG/CR-3391 (CR3391)**
 - **ASTM E900-15e2 (E900_15)**
