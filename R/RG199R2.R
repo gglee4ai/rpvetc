@@ -276,7 +276,8 @@ rg199r2_cf_by_sv <- function(SV_flu, SV_tts) {
 #' rg199r2_cf_table(c("B", "W"), c(0.2, 0.3), c(0.7, 1.0))
 #'
 rg199r2_cf_table <- function(product_form, Cu, Ni) {
-  stopifnot(all(product_form %in% c("B", "W")))
+  stopifnot(all(product_form %in% c("B", "F", "P", "W")))
+  product_form[product_form %in% c("F", "P")] <- "B"
   stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
   stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
 
@@ -309,6 +310,8 @@ rg199r2_cf_table <- function(product_form, Cu, Ni) {
 #' rg199r2_sd(c("B", "B"), c(1e18, 5e19), c(10, 50))
 #'
 rg199r2_sd <- function(product_form, SV_flu = NULL, SV_tts = NULL) {
+  stopifnot(all(product_form %in% c("B", "F", "P", "W")))
+  product_form[product_form %in% c("F", "P")] <- "B"
   base_weld <- c("B" = 17, "W" = 28)
 
   # Case 1: Only product_form is provided
