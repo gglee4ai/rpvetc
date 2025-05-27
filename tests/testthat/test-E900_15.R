@@ -39,7 +39,7 @@ test_that("8", {
 })
 
 test_that("9", {
-  test1 <- E900_15("P", 0.2, 0.18, 1.36, 0.012, 1.8 * 290 + 32, 2.56894e18, temperature_unit = "F")
+  test1 <- E900_15("P", 0.2, 0.18, 1.36, 0.012, 1.8 * 290 + 32, 2.56894e18, output_unit = "F", temperature_unit = "F")
   expect_equal(round(test1, 2), c(57.14))
 })
 

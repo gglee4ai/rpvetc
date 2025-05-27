@@ -27,38 +27,42 @@
 #'          \item \code{"TTS2"} - Second component of TTS
 #'          \item \code{"SD"}   - Standard Deviation of the TTS estimation
 #'        }
-#' @param temperature_unit character, specifying the input and output temperature unit. Must be one of:
+#' @param output_unit character, specifying the unit of the output result. Must be one of:
 #'        \itemize{
-#'          \item \code{"Celsius"} - Returns the result in degrees Celsius.
-#'          \item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
+#'          \item \code{"Celsius"} - Output will be returned in degrees Celsius.
+#'          \item \code{"Fahrenheit"} - Output will be returned in degrees Fahrenheit.
+#'        }
+#' @param temperature_unit character, specifying the input temperature unit. Must be one of:
+#'        \itemize{
+#'          \item \code{"Celsius"} - Input temperature is given in degrees Celsius.
+#'          \item \code{"Fahrenheit"} - Input temperature is given in degrees Fahrenheit.
 #'        }
 #'
-#' @return A numeric vector representing the computed result in the specified \code{temperature_unit}.
-#'         The value corresponds to the selected \code{output} parameter (TTS, TTS1, TTS2, or SD).
+#' @return A numeric vector representing the computed result (TTS, TTS1, TTS2, or SD),
+#'         expressed in the unit specified by \code{output_unit} (Celsius or Fahrenheit).
 #'
 #' @examples
 #' # Example 1: Compute total TTS for a plate material
 #' E900_15("P", Cu = 0.2, Ni = 0.18, Mn = 1.36, P = 0.012,
 #'         temperature = 290, fluence = 2.56894e18,
-#'         output = "TTS", temperature_unit = "Celsius")
+#'         output = "TTS", output_unit = "Celsius", temperature_unit = "Celsius")
 #'
 #' # Example 2: Compute TTS1 component
 #' E900_15("F", Cu = 0.15, Ni = 0.2, Mn = 1.4, P = 0.01,
 #'         temperature = 300, fluence = 1e19,
-#'         output = "TTS1", temperature_unit = "Fahrenheit")
+#'         output = "TTS1", output_unit = "Fahrenheit", temperature_unit = "Celsius")
 #'
 #' # Example 3: Compute TTS2 component
 #' E900_15("W", Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
 #'         temperature = 275, fluence = 5e18,
-#'         output = "TTS2", temperature_unit = "Celsius")
+#'         output = "TTS2", output_unit = "Celsius", temperature_unit = "Celsius")
 #'
 #' # Example 4: Compute Standard Deviation (SD) for a weld metal
 #' E900_15("W", Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
 #'         temperature = 275, fluence = 5e18,
-#'         output = "SD", temperature_unit = "Fahrenheit")
+#'         output = "SD", output_unit = "Fahrenheit", temperature_unit = "Celsius")
 #'
 #' @seealso \code{\link{E900_flux}}
-#'
 #' @export
 E900_15 <- function(product_form,
                     Cu,
@@ -68,11 +72,14 @@ E900_15 <- function(product_form,
                     temperature,
                     fluence,
                     output = c("TTS", "TTS1", "TTS2", "SD"),
-                    temperature_unit = c("Celsius", "Fahrenheit")) {
+                    output_unit = c("Celsius", "Fahrenheit"),
+                    temperature_unit = c("Celsius", "Fahrenheit")
+                    ) {
   #------------------------------------#
   # 0) 기본 설정
   #------------------------------------#
   output <- match.arg(output)
+  output_unit <- match.arg(output_unit)
   temperature_unit <- match.arg(temperature_unit)
 
   #------------------------------------#
@@ -196,7 +203,7 @@ E900_15 <- function(product_form,
   #    - 만약 최종 출력을 °F로 원하면
   #      TTS/SD 결과(= °C)를 (×9/5)
   #------------------------------------#
-  if (temperature_unit == "Fahrenheit") {
+  if (output_unit == "Fahrenheit") {
     result <- result * (9 / 5)
   }
 
