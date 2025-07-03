@@ -72,5 +72,5 @@ NP3319(product_form = "B", output = "SD")
 
 }
 \seealso{
-\code{\link{CR3391}}, \code{\link{RG199R2}}
+\code{\link{CR3391}}, \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
 }

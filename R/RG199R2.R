@@ -1,385 +1,277 @@
-## Main interface function ----
-
-#' Regulatory Guide 1.99 Rev. 2 Calculations
+## 1. Main Entry ----
+#' Regulatory Guide 1.99 Rev. 2 Position 1.1 Table-based Embrittlement Property Calculator
 #'
-#' Computes various material property adjustments based on the Regulatory Guide 1.99 Rev. 2 (1988),
-#' including Temperature Transition Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Margin.
+#' Computes radiation embrittlement-related properties based on the U.S. NRC *Regulatory Guide 1.99 Revision 2 (1988)*,
+#' specifically following the Position 1.1 methodology. This position defines empirical models for evaluating the
+#' embrittlement of reactor pressure vessel (RPV) materials, based on material composition and neutron fluence.
 #'
-#' This function integrates multiple models and equations to determine the most relevant material property,
-#' given the user-provided parameters.
+#' This is the main interface function for Position 1.1. Given the product form, copper and nickel contents, and
+#' neutron fluence, it internally computes the requested output using table-based or empirical expressions defined in the guide.
+#' Temperature unit conversion is handled automatically. This function does not use surveillance test data and relies only on
+#' Position 1.1 (i.e., tabulated Chemistry Factor and fixed Standard Deviation).
 #'
-#' @param product_form character vector, specifying the product form. Must be one of \code{"B"} (base metal), \code{"F"} (forgings), \code{"P"} (plate), or \code{"W"} (weld metal).
-#'        If \code{"F"} or \code{"P"} are provided, they are treated as \code{"B"}.
-#' @param Cu numeric vector, copper content in weight percent (wt%). Used to compute CF if not provided directly.
-#' @param Ni numeric vector, nickel content in weight percent (wt%). Used to compute CF if not provided directly.
-#' @param fluence numeric vector, neutron fluence in n/cm². Required for computing TTS, Margin, and FF.
-#' @param CF numeric vector, chemistry factor in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data or tabulated values.
-#' @param SD numeric vector, standard deviation in degrees Fahrenheit (°F) or Celsius (°C) based on \code{temperature_unit}. If not provided, it is estimated using surveillance data.
-#' @param SV_flu numeric vector, neutron fluence in n/cm² from surveillance test data. Required if CF or SD are to be estimated from surveillance data.
-#' @param SV_tts numeric vector, temperature transition shift (TTS) in degrees Fahrenheit (°F) or Celsius (°C) from surveillance test data. Used in CF and SD estimation.
-#' @param output character, specifying which property to compute. Must be one of:
-#'        \itemize{
-#'          \item \code{"TTS"} - Temperature Transition Shift
-#'          \item \code{"CF"} - Chemistry Factor
-#'          \item \code{"FF"} - Fluence Factor
-#'          \item \code{"SD"} - Standard Deviation
-#'          \item \code{"Margin"} - Margin for radiation embrittlement assessment
-#'        }
-#' @param temperature_unit character, specifying the output temperature unit. Must be one of:
-#'        \itemize{
-#'          \item \code{"Celsius"} - Returns the result in degrees Celsius.
-#'          \item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
-#'        }
-#' @param verbose logical, if \code{TRUE}, additional messages will be printed to indicate which calculation method is used.
+#' @param product_form Character vector specifying the product form. Must be one of \code{"B"} (base metal),
+#'   \code{"F"} (forgings), \code{"P"} (plate), or \code{"W"} (weld metal). \code{"F"} and \code{"P"} are internally treated as \code{"B"}.
+#' @param Cu Numeric vector of copper content (wt%). Required to compute CF, TTS, and Margin.
+#' @param Ni Numeric vector of nickel content (wt%). Required to compute CF, TTS, and Margin.
+#' @param fluence Numeric vector of neutron fluence (n/cm\eqn{^2}). Required for FF, TTS, and Margin calculations.
+#' @param output Character scalar specifying which property to compute. Must be one of:
+#'   \itemize{
+#'     \item \code{"TTS"} – Transition Temperature Shift
+#'     \item \code{"CF"} – Chemistry Factor
+#'     \item \code{"FF"} – Fluence Factor
+#'     \item \code{"SD"} – Standard Deviation
+#'     \item \code{"Margin"} – Regulatory Margin
+#'   }
+#' @param temperature_unit Character scalar indicating the output temperature unit. Must be one of:
+#'   \code{"Celsius"} or \code{"Fahrenheit"}.
 #'
-#' @return A numeric vector containing the computed result based on the selected \code{output} parameter.
-#'         The unit depends on \code{temperature_unit}, except for Fluence Factor (\code{"FF"}), which is unitless.
+#' @return A numeric vector containing the result corresponding to \code{output}. Units are:
+#'   \itemize{
+#'     \item \code{"FF"} – unitless
+#'     \item others – degrees Celsius or Fahrenheit, depending on \code{temperature_unit}
+#'   }
 #'
 #' @examples
-#' # Example 1: Compute CF using tabulated values
-#' RG199R2("B", 0.2, 0.2, fluence = 1e19, output = "CF", temperature_unit = "Fahrenheit")
+#' # Compute Chemistry Factor using Cu/Ni
+#' RG199R2_P1("B", Cu = 0.25, Ni = 0.8, fluence = 1e19, output = "CF", temperature_unit = "Fahrenheit")
 #'
-#' # Example 2: Compute FF (Fluence Factor)
-#' RG199R2(fluence = 1e19, output = "FF")
+#' # Compute Fluence Factor for a given fluence
+#' RG199R2_P1(fluence = 1e19, output = "FF")
 #'
-#' # Example 3: Compute TTS using CF and fluence
-#' RG199R2(CF = 100, fluence = 1e19, output = "TTS", temperature_unit = "Celsius")
+#' # Compute TTS using Cu/Ni and fluence
+#' RG199R2_P1("B", Cu = 0.2, Ni = 0.7, fluence = 5e19, output = "TTS", temperature_unit = "Celsius")
 #'
-#' # Example 4: Compute Margin with surveillance test data
-#' RG199R2(product_form = "W", SV_flu = c(1e18, 5e19), SV_tts = c(10, 50),
-#'         fluence = 1e19, output = "Margin", temperature_unit = "Fahrenheit", verbose = TRUE)
+#' # Compute Margin using base metal data
+#' RG199R2_P1("B", Cu = 0.15, Ni = 0.9, fluence = 3e19, output = "Margin")
 #'
-#' @seealso \code{\link{CR3391}}, \code{\link{NP3319}}, \code{\link{E900_15}}
-#'
+#' @seealso \code{\link{RG199R2_P2}} for Position 2.1 model
 #' @export
-RG199R2 <- function(
+
+
+RG199R2_P1 <- function(
     product_form = NULL, # for CF
     Cu = NULL, # for CF
     Ni = NULL, # for CF
     fluence = NULL, # for FF, TTS, Margin
-    CF = NULL, # for FF, TTS, Margin
-    SD = NULL, # for Margin
-    SV_flu = NULL, # for CF, SD
-    SV_tts = NULL, # for CF, SD
     output = c("TTS", "CF", "FF", "SD", "Margin"),
-    temperature_unit = c("Celsius", "Fahrenheit"),
-    verbose = FALSE) {
+    temperature_unit = c("Celsius", "Fahrenheit")) {
   #------------------------#
-  # 1) 기본 설정
+  # 1) 기본 인수 점검
   #------------------------#
-  output <- match.arg(output)
-  temperature_unit <- match.arg(temperature_unit)
+  output <- match.arg(output, c("TTS", "CF", "FF", "SD", "Margin"))
+  temperature_unit <- match.arg(temperature_unit, c("Celsius", "Fahrenheit"))
+
   if (!is.null(product_form)) {
-    product_form <- as.character(product_form)
-    stopifnot(all(product_form %in% c("B", "F", "P", "W")))
-    product_form[product_form %in% c("F", "P")] <- "B"
+    product_form <- parse_product_form(product_form)
   }
 
-  #------------------------#
-  # 2) 계산용 온도차를 화씨로 변환
-  #------------------------#
-  if (temperature_unit == "Celsius") {
-    if (!is.null(SV_tts) && is.numeric(SV_tts)) {
-      SV_tts <- SV_tts * (9 / 5)
-    }
-    if (!is.null(CF) && is.numeric(CF)) {
-      CF <- CF * (9 / 5)
-    }
-    if (!is.null(SD) && is.numeric(SD)) {
-      SD <- SD * (9 / 5)
-    }
+  if (!is.null(Cu)) {
+    stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
   }
 
-  #------------------------#
-  # 3) SV_flu가 있고 fluence가 없으면 fluence를 대체
-  #------------------------#
-  if (is.numeric(SV_flu) && is.null(fluence)) {
-    fluence <- SV_flu
+  if (!is.null(Ni)) {
+    stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
+  }
+
+  if (!is.null(fluence)) {
+    stopifnot(is.numeric(fluence), all(fluence >= 0))
   }
 
   #------------------------------------#
-  # 4) 입력값 길이 검사 및 확장
+  # 2) 입력값 길이 검사 및 확장
   #------------------------------------#
   # 필요한 인자들의 길이 파악
-  arg_list <- list(product_form, Cu, Ni, fluence, CF, SD)
+  arg_list <- list(product_form, Cu, Ni, fluence)
   arg_len <- sapply(arg_list, length)
   max_len <- max(arg_len)
+  stopifnot(max_len > 0)
 
   # 길이가 0 (NULL), 1, max_len 세 가지 경우만 허용
   if (!all(arg_len %in% c(0, 1, max_len))) {
-    stop("product_form, Cu, Ni, fluence, CF and SD must have length 0, 1 or max length.")
+    stop("product_form, Cu, Ni, and fluence must have length 0, 1 or the same length.")
   }
 
-  # 벡터 길이 확장
-  replicate_to_max <- function(x, max_len) {
-    if (length(x) == 1 && max_len > 1) rep(x, max_len) else x # 길이 1개는 max_len으로 확장
-  }
-  product_form <- replicate_to_max(product_form, max_len)
-  Cu <- replicate_to_max(Cu, max_len)
-  Ni <- replicate_to_max(Ni, max_len)
-  fluence <- replicate_to_max(fluence, max_len)
-  CF <- replicate_to_max(CF, max_len)
-  SD <- replicate_to_max(SD, max_len)
+  # 변수 길이 확장
+  pf <- rep_expand(product_form, max_len)
+  cu <- rep_expand(Cu, max_len)
+  ni <- rep_expand(Ni, max_len)
+  fl <- rep_expand(fluence, max_len)
 
   #------------------------------------#
-  # 5) 중요 계산 함수들(복합 입력 고려)
-  #------------------------------------#
-  # 5-1) calc_cf: 다양한 CF 계산 종합(°F)
-  calc_cf <- function(product_form, Cu, Ni, CF, SV_flu, SV_tts) {
-    # Case 1: CF 직접
-    if (is.numeric(CF) && all(CF >= 0)) {
-      if (verbose) message("Case 1: Using direct CF input.")
-      return(CF)
-    }
-
-    # Case 2: SV 데이터(감시시험)로부터 CF 추정
-    if (is.numeric(SV_flu) && sum(SV_flu > 0) >= 2) {
-      if (verbose) message("Case 2: Using SV data to estimate CF.")
-      return(rg199r2_cf_by_sv(SV_flu, SV_tts))
-    }
-
-    # Case 3: Table로 계산
-    if (verbose) message("Case 3: Using RG1.99 R2 table for CF.")
-    return(rg199r2_cf_table(product_form, Cu, Ni))
-  }
-
-  # 5-2) calc_margin: 다양한 Margin 계산 종합(°F)
-  calc_margin <- function(product_form, Cu, Ni, fluence, CF, SD, SV_flu, SV_tts) {
-    # CF가 제공되지 않으면, 계산
-    if (is.numeric(CF) && all(CF >= 0)) {
-      cf <- CF
-    } else {
-      cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
-    }
-
-    # SD가 제공되지 않으면 계산
-    if (is.numeric(SD) && all(SD >= 0)) {
-      sd <- SD
-    } else {
-      sd <- rg199r2_sd(product_form, SV_flu, SV_tts)
-    }
-
-    # Margin 계산값 반환
-    rg199r2_margin(cf, fluence, sd)
-  }
-
-  #------------------------------------#
-  # 결과 선택
+  # 3) 출력값 선택
   #------------------------------------#
   result <- switch(output,
-    "CF" = calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts),
-    "FF" = rg199r2_ff(fluence),
-    "TTS" = {
-      cf <- calc_cf(product_form, Cu, Ni, CF, SV_flu, SV_tts)
-      rg199r2_tts(cf, fluence)
-    },
-    "SD" = rg199r2_sd(product_form, SV_flu, SV_tts),
-    "Margin" = calc_margin(product_form, Cu, Ni, fluence, CF, SD, SV_flu, SV_tts)
+    "TTS" = rg199r2_p1_tts(pf, cu, ni, fl),
+    "CF" = rg199r2_p1_cf(pf, cu, ni),
+    "FF" = rg199r2_ff(fl),
+    "SD" = rg199r2_p1_sd(pf),
+    "Margin" = rg199r2_p1_margin(pf, cu, ni, fl)
   )
 
   #------------------------------------#
-  # 5) 결과 온도 변환
-  #    - 만약 최종 출력을 °C로 원하면
-  #    - FF 제외
+  # 4) 결과 온도 변환
   #------------------------------------#
-  if (temperature_unit == "Celsius" && output %in% c("TTS", "CF", "SD")) {
+  if (temperature_unit == "Celsius" && output != "FF") {
     result <- result * (5 / 9)
   }
-
-  return(unname(result))
+  unname(result)
 }
 
 
-
-## Auxiliary functions ----
-
-#' Fluence Factor Calculation Based on Regulatory Guide 1.99 Rev. 2
+#' Regulatory Guide 1.99 Rev. 2 Position 2.1 Surveillance-Based Embrittlement Property Calculator
 #'
-#' Computes the fluence factor (FF) according to the guidelines in Regulatory Guide 1.99 Rev. 2.
-#' This function calculates FF based on the provided neutron fluence.
+#' Computes radiation embrittlement-related properties using plant-specific surveillance data,
+#' based on an extended interpretation of the U.S. NRC *Regulatory Guide 1.99 Revision 2 (1988)*.
 #'
-#' @param fluence numeric vector, neutron fluence in n/cm². Must be a non-negative value.
-#' @return A numeric vector representing the fluence factor (FF).
-#' @export
+#' This function is designed for regulatory or engineering assessments using Position 2.1-like methodology,
+#' which incorporates actual surveillance fluence–shift data pairs. Using these, the Chemistry Factor (CF)
+#' is back-calculated, and used in combination with neutron fluence to derive transition temperature shift (TTS),
+#' Fluence Factor (FF), Standard Deviation (SD), and Margin. Temperature unit conversion is handled automatically.
+#'
+#' @param product_form Optional character vector specifying the product form. Must be one of \code{"B"} (base metal),
+#'   \code{"F"} (forgings), \code{"P"} (plate), or \code{"W"} (weld metal). Required only for computing \code{"SD"} and \code{"Margin"}.
+#'   Internally, \code{"F"} and \code{"P"} are treated as \code{"B"}.
+#' @param SV_flu Numeric vector of surveillance neutron fluence values (n/cm\eqn{^2}). Required for all calculations except FF.
+#' @param SV_tts Numeric vector of corresponding measured transition temperature shifts (TTS) in Fahrenheit.
+#'   Must be the same length as \code{SV_flu}. Required for all outputs except FF.
+#' @param fluence Optional numeric vector of neutron fluence values (n/cm\eqn{^2}) for which properties like FF, TTS, or Margin are to be calculated.
+#'   If omitted, the function uses \code{SV_flu} as default.
+#' @param output Character scalar indicating which property to compute. Must be one of:
+#'   \itemize{
+#'     \item \code{"TTS"} – Estimated Transition Temperature Shift
+#'     \item \code{"CF"} – Back-calculated Chemistry Factor
+#'     \item \code{"FF"} – Fluence Factor
+#'     \item \code{"SD"} – Standard Deviation of surveillance data vs. model
+#'     \item \code{"Margin"} – Regulatory Margin (minimum of TTS or 2×SD)
+#'   }
+#' @param temperature_unit Character scalar indicating the output temperature unit. Must be one of:
+#'   \code{"Celsius"} or \code{"Fahrenheit"}.
+#'
+#' @return A numeric vector or scalar corresponding to the requested \code{output}. Units are:
+#'   \itemize{
+#'     \item \code{"FF"} – unitless
+#'     \item others – degrees Celsius or Fahrenheit, depending on \code{temperature_unit}
+#'   }
+#'
+#' @details
+#' The Chemistry Factor (CF) is inferred by minimizing the squared residuals of the model:
+#' \eqn{TTS_i ≈ CF × FF(fluence_i)}. The Standard Deviation (SD) is selected as either half or full of the
+#' fixed threshold (17°F for base metal, 28°F for weld) depending on the maximum residual.
+#'
+#' For Margin, the smaller of TTS or 2×SD is returned, as per regulatory guidance.
+#'
 #' @examples
-#' # Example: Calculate FF for a given fluence value
-#' rg199r2_ff(c(1e18, 5e19, 1e20))
+#' # Back-calculate CF from surveillance data
+#' RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), output = "CF")
 #'
-rg199r2_ff <- function(fluence) {
-  stopifnot(is.numeric(fluence), all(fluence >= 0))
-
-  fl <- fluence / 1e19
-  fl^(0.28 - 0.1 * log10(fl))
-}
-
-
-
-#' Temperature Transition Shift (TTS) Calculation Based on Regulatory Guide 1.99 Rev. 2
+#' # Compute TTS for a given fluence using inferred CF
+#' RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), fluence = 3e19, output = "TTS")
 #'
-#' Computes the temperature transition shift (TTS) as per the guidelines in Regulatory Guide 1.99 Rev. 2.
-#' This function calculates TTS based on the provided chemistry factor (CF) and neutron fluence.
+#' # Compute Margin for weld metal
+#' RG199R2_P2("W", c(1e19, 2e19), c(100, 130), fluence = 3e19, output = "Margin")
 #'
-#' @param CF numeric vector, chemistry factor. Must be a non-negative value.
-#' @param fluence numeric vector, neutron fluence in n/cm². Must be a non-negative value.
-#' @return A numeric vector representing the temperature transition shift (TTS) in degrees Fahrenheit (°F).
+#' @seealso \code{\link{RG199R2_P1}} for Position 1.1 (table-based) model
 #' @export
-#' @examples
-#' # Example: Calculate TTS for given CF and fluence values
-#' rg199r2_tts(c(10, 15), c(1e18, 5e19))
-#'
-rg199r2_tts <- function(CF, fluence) {
-  stopifnot(is.numeric(CF), all(CF >= 0))
 
-  CF * rg199r2_ff(fluence)
-}
+RG199R2_P2 <- function(
+    product_form = NULL, # for SD, Margin
+    SV_flu = NULL, # SV_fluence vector
+    SV_tts = NULL, # SV_TTS vector
+    fluence = NULL, # for FF, TTS, Margin,
+    output = c("TTS", "CF", "FF", "SD", "Margin"),
+    temperature_unit = c("Celsius", "Fahrenheit")) {
+  #------------------------#
+  # 1) 기본 인수 점검
+  #------------------------#
+  output <- match.arg(output, c("TTS", "CF", "FF", "SD", "Margin"))
+  temperature_unit <- match.arg(temperature_unit, c("Celsius", "Fahrenheit"))
 
-
-
-#' Chemistry Factor Calculation Based on Surveillance Test Results
-#'
-#' Computes the chemistry factor (CF) using surveillance test results as per the guidelines in Regulatory Guide 1.99 Rev. 2.
-#' The calculation requires at least two valid surveillance test results and ensures that fluence values of zero correspond to a temperature transition shift (TTS) of zero.
-#'
-#' @param SV_flu numeric vector, neutron fluence in n/cm² from surveillance test results. Must be non-negative.
-#' @param SV_tts numeric vector, temperature transition shift (TTS) in degrees Fahrenheit (°F) from surveillance test results.
-#' Must be non-negative and of the same length as `SV_flu`.
-#' @return A single numeric value representing the chemistry factor (CF) in degrees Fahrenheit (°F).
-#' @export
-#' @examples
-#' # Example: Calculate CF using surveillance test results
-#' rg199r2_cf_by_sv(c(1e18, 5e19, 1e20), c(10, 50, 100))
-#'
-rg199r2_cf_by_sv <- function(SV_flu, SV_tts) {
-  stopifnot(is.numeric(SV_flu), is.numeric(SV_tts))
-  stopifnot(length(SV_flu) == length(SV_tts))
-  stopifnot(all(SV_tts[SV_flu == 0] == 0))
-  stopifnot((sum(SV_flu > 0) >= 2)) # At least two valid surveillance data points required
-
-  ff <- rg199r2_ff(SV_flu)
-  ff2 <- ff^2
-  sum(ff * SV_tts) / sum(ff2) # Returns a single CF value
-}
-
-
-
-#' Chemistry Factor (CF) from Regulatory Guide 1.99 Rev. 2 Tables
-#'
-#' Computes the chemistry factor (CF) based on material properties and product form using the tables provided in Regulatory Guide 1.99 Rev. 2.
-#'
-#' @param product_form character vector, specifying the product form. Must be one of \code{"B"} (base metal) or \code{"W"} (weld metal).
-#' @param Cu numeric vector, copper content in weight percent (wt%). Must be between 0 and 100.
-#' @param Ni numeric vector, nickel content in weight percent (wt%). Must be between 0 and 100.
-#' @return A numeric vector representing the chemistry factor (CF) in degrees Fahrenheit (°F).
-#' @export
-#' @examples
-#' # Example: Calculate CF for base and weld metals with given Cu and Ni values
-#' rg199r2_cf_table(c("B", "W"), c(0.2, 0.3), c(0.7, 1.0))
-#'
-rg199r2_cf_table <- function(product_form, Cu, Ni) {
-  stopifnot(all(product_form %in% c("B", "F", "P", "W")))
-  product_form[product_form %in% c("F", "P")] <- "B"
-  stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
-  stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
-
-  mapply(function(pf, cu, ni) {
-    if (pf == "B") {
-      calc_cf_base(cu, ni) # Calculate CF for base metal using table
-    } else { # pf == "W"
-      calc_cf_weld(cu, ni) # Calculate CF for weld metal using table
-    }
-  }, product_form, Cu, Ni, SIMPLIFY = TRUE)
-}
-
-
-
-#' Sigma Delta (SD) Calculation from Surveillance Test Data
-#'
-#' Computes the sigma delta (SD) based on surveillance test data and product form using Regulatory Guide 1.99 Rev. 2 guidelines.
-#' The SD is determined either from the product form alone or using surveillance fluence and TTS data.
-#'
-#' @param product_form character vector, specifying the product form. Must be one of \code{"B"} (base metal) or \code{"W"} (weld metal).
-#' @param SV_flu numeric vector, neutron fluence in n/cm² from surveillance test data. Optional if SD is determined solely by \code{product_form}.
-#' @param SV_tts numeric vector, temperature transition shift (TTS) in degrees Fahrenheit (°F) from surveillance test data. Optional if SD is determined solely by \code{product_form}.
-#' @return A numeric vector representing the sigma delta (SD) in degrees Fahrenheit (°F).
-#' @export
-#' @examples
-#' # Example 1: Calculate SD based only on product form
-#' rg199r2_sd(c("B", "W"))
-#'
-#' # Example 2: Calculate SD using surveillance test data
-#' rg199r2_sd(c("B", "B"), c(1e18, 5e19), c(10, 50))
-#'
-rg199r2_sd <- function(product_form, SV_flu = NULL, SV_tts = NULL) {
-  stopifnot(all(product_form %in% c("B", "F", "P", "W")))
-  product_form[product_form %in% c("F", "P")] <- "B"
-  base_weld <- c("B" = 17, "W" = 28)
-
-  # Case 1: Only product_form is provided
-  if (is.null(SV_flu) && is.null(SV_tts)) {
-    sd <- base_weld[product_form]
-    return(sd)
+  if (!is.null(SV_flu) && !is.null(SV_tts)) {
+    stopifnot(is.numeric(SV_flu), is.numeric(SV_tts))
+    stopifnot(length(SV_flu) == length(SV_tts))
+    stopifnot(all(SV_tts[SV_flu == 0] == 0))
+    stopifnot((sum(SV_flu > 0) >= 2)) # At least two valid surveillance data points required
   }
 
-  # Case 2: Both SV_flu and SV_tts are provided
-  unique_form <- unique(product_form)
-  stopifnot(length(unique_form) == 1) # Ensure all entries are either "B" or "W"
+  if (is.null(fluence)) {
+    fluence <- SV_flu
+  } else {
+    stopifnot(is.numeric(fluence), all(fluence >= 0))
+  }
 
-  cf <- rg199r2_cf_by_sv(SV_flu, SV_tts) # Single CF value
-  best_tts <- cf * rg199r2_ff(SV_flu)
-  scatter <- abs(SV_tts - best_tts)
-  max_scatter <- max(scatter)
+  if (!is.null(product_form)) {
+    product_form <- as.character(product_form)
+    unique_form <- unique(product_form)
+    if (length(unique_form) != 1) {
+      stop("Only one product form must be provided")
+    }
+    product_form <- parse_product_form(product_form)
+  }
 
-  threshold <- base_weld[unique_form] # 17 or 28
-  half_val <- threshold / 2 # 8.5 or 14
-  sd <- if (max_scatter > threshold) threshold else half_val
+  #------------------------------------#
+  # 2) 출력값 선택
+  #------------------------------------#
+  result <- switch(output,
+    "TTS" = rg199r2_p2_tts(SV_flu, SV_tts, fluence),
+    "CF" = rg199r2_p2_cf(SV_flu, SV_tts),
+    "FF" = rg199r2_ff(fluence),
+    "SD" = rg199r2_p2_sd(product_form, SV_flu, SV_tts),
+    "Margin" = rg199r2_p2_margin(product_form, SV_flu, SV_tts, fluence)
+  )
 
-  # Expand single SD to match the length of product_form
-  sd <- rep(sd, length(product_form))
-  return(sd)
+  #------------------------------------#
+  # 3) 결과 온도 변환
+  #------------------------------------#
+  if (temperature_unit == "Celsius" && output != "FF") {
+    result <- result * (5 / 9)
+  }
+  unname(result)
 }
 
 
+## 2. P1.1 Calculations ----
 
-#' Margin Calculation Based on Regulatory Guide 1.99 Rev. 2
-#'
-#' Computes the margin for temperature transition shift (TTS) using the chemistry factor (CF), neutron fluence, and sigma delta (SD) as per the guidelines in Regulatory Guide 1.99 Rev. 2.
-#'
-#' @param CF numeric vector, the chemistry factor (CF) in degrees Fahrenheit (°F). Must be non-negative.
-#' @param fluence numeric vector, neutron fluence in n/cm². Must be non-negative.
-#' @param SD numeric vector, sigma delta (SD) in degrees Fahrenheit (°F). Must be non-negative.
-#' @return A numeric vector representing the computed margin in degrees Fahrenheit (°F).
-#' @export
-#' @examples
-#' # Example: Calculate margin for given CF, fluence, and SD
-#' rg199r2_margin(c(10, 15), c(1e18, 5e19), c(5, 7))
-#'
-rg199r2_margin <- function(CF, fluence, SD) {
-  stopifnot(is.numeric(CF), all(CF >= 0))
-  stopifnot(is.numeric(fluence), all(fluence >= 0))
-  stopifnot(is.numeric(SD), all(SD >= 0))
-
-  tts <- CF * rg199r2_ff(fluence) # Calculate TTS
-  margin <- 2 * SD # Margin is 2 * SD
-  ifelse(margin > tts, tts, margin) # Return the smaller of TTS or Margin
+rg199r2_p1_tts <- function(product_form, Cu, Ni, fluence) {
+  cf <- rg199r2_p1_cf(product_form, Cu, Ni)
+  calculate_tts(cf, fluence)
 }
 
 
+rg199r2_p1_cf <- function(product_form, Cu, Ni) {
+  n <- length(product_form)
+  cf <- numeric(n)
 
-## Internal functions ----
+  for (i in seq_len(n)) {
+    pf <- product_form[i]
+    cu <- Cu[i]
+    ni <- Ni[i]
 
-#' Chemistry Factor (CF) Calculation for Base Metal
-#'
-#' Computes the chemistry factor (CF) for base metals based on the tables provided in Regulatory Guide 1.99 Rev. 2.
-#' The CF is determined by interpolating values from the provided table based on input copper (Cu) and nickel (Ni) content.
-#'
-#' @param Cu numeric vector, copper content in weight percent (wt%). Must be between 0 and 0.4.
-#' @param Ni numeric vector, nickel content in weight percent (wt%). Must be between 0 and 1.2.
-#' @return A numeric vector representing the chemistry factor (CF) in degrees Fahrenheit (°F).
-#' @examples
-#' # Example: Calculate CF for base metals with given Cu and Ni values
-#' rpvetc:::calc_cf_base(0.1, 0.6)
-#'
-calc_cf_base <- function(Cu, Ni) { # not vectorized
+    cf[i] <- if (pf == "B") {
+      rg199r2_p1_cf_base(cu, ni)
+    } else {
+      rg199r2_p1_cf_weld(cu, ni)
+    }
+  }
+
+  cf
+}
+
+
+rg199r2_p1_sd <- function(product_form) {
+  base_weld <- c("B" = 17, "W" = 28)
+  base_weld[product_form]
+}
+
+
+rg199r2_p1_margin <- function(product_form, Cu, Ni, fluence) {
+  tts <- rg199r2_p1_tts(product_form, Cu, Ni, fluence) # Calculate TTS
+  margin <- 2 * rg199r2_p1_sd(product_form) # Margin is 2 * SD
+  ifelse(margin > tts, tts, margin) # The smaller of TTS or Margin
+}
+
+
+rg199r2_p1_cf_base <- function(Cu, Ni) { # not vectorized
   cf_base <- matrix(
     c(
       20, 20, 20, 20, 22, 25, 28, 31, 34, 37, 41, 45, 49,
@@ -411,24 +303,11 @@ calc_cf_base <- function(Cu, Ni) { # not vectorized
   )
   Ni_values <- seq(0, 1.2, 0.2)
   Cu_values <- seq(0, 0.4, 0.01)
-  linear_interpolate_2d(Ni_values, Cu_values, cf_base, Ni, Cu)
+  interp2d_linear(Ni_values, Cu_values, cf_base, Ni, Cu)
 }
 
 
-
-#' Chemistry Factor (CF) Calculation for Weld Metal
-#'
-#' Computes the chemistry factor (CF) for weld metals based on the tables provided in Regulatory Guide 1.99 Rev. 2.
-#' The CF is determined by interpolating values from the provided table based on input copper (Cu) and nickel (Ni) content.
-#'
-#' @param Cu numeric vector, copper content in weight percent (wt%). Must be between 0 and 0.4.
-#' @param Ni numeric vector, nickel content in weight percent (wt%). Must be between 0 and 1.2.
-#' @return A numeric vector representing the chemistry factor (CF) in degrees Fahrenheit (°F).
-#' @examples
-#' # Example: Calculate CF for weld metals with given Cu and Ni values
-#' rpvetc:::calc_cf_weld(0.1, 0.6)
-#'
-calc_cf_weld <- function(Cu, Ni) { # not vectorized
+rg199r2_p1_cf_weld <- function(Cu, Ni) { # not vectorized
   cf_weld <- matrix(
     c(
       20, 20, 21, 22, 24, 26, 29, 32, 36, 40, 44, 49, 52, 58,
@@ -461,31 +340,12 @@ calc_cf_weld <- function(Cu, Ni) { # not vectorized
   )
   Ni_values <- seq(0, 1.2, 0.2)
   Cu_values <- seq(0, 0.4, 0.01)
-  linear_interpolate_2d(Ni_values, Cu_values, cf_weld, Ni, Cu)
+  interp2d_linear(Ni_values, Cu_values, cf_weld, Ni, Cu)
 }
 
 
-
-#' 2D Linear Interpolation
-#'
-#' Computes the interpolated value at a given \code{x} and \code{y} coordinate from a 2D table.
-#' The table must have \code{x_values} along the columns and \code{y_values} along the rows.
-#' This function is not vectorized and handles a single pair of \code{x} and \code{y} values.
-#'
-#' @param x_values numeric vector, values along the x-axis (columns of the table).
-#' @param y_values numeric vector, values along the y-axis (rows of the table).
-#' @param table numeric matrix, 2D table containing the data values. Rows correspond to \code{y_values}, columns to \code{x_values}.
-#' @param x numeric, the x-coordinate at which to interpolate. Must be within the range of \code{x_values}.
-#' @param y numeric, the y-coordinate at which to interpolate. Must be within the range of \code{y_values}.
-#' @return Numeric value representing the interpolated result.
-#' @examples
-#' # Example: Interpolating from a 2D table
-#' x_vals <- seq(0, 1, 0.5)
-#' y_vals <- seq(0, 1, 0.5)
-#' table <- matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9), nrow = 3, byrow = TRUE)
-#' rpvetc:::linear_interpolate_2d(x_vals, y_vals, table, 0.25, 0.75)
-#'
-linear_interpolate_2d <- function(x_values, y_values, table, x, y) {
+# 2 차원 보간 함수
+interp2d_linear <- function(x_values, y_values, table, x, y) {
   # Ensure x and y are within the range of x_values and y_values
   if (x < min(x_values) || x > max(x_values)) {
     stop(sprintf(
@@ -526,11 +386,78 @@ linear_interpolate_2d <- function(x_values, y_values, table, x, y) {
     interpolated_value <- Q11 + (Q21 - Q11) * (x - x1) / (x2 - x1)
   } else {
     interpolated_value <- (Q11 * (x2 - x) * (y2 - y) +
-                             Q21 * (x - x1) * (y2 - y) +
-                             Q12 * (x2 - x) * (y - y1) +
-                             Q22 * (x - x1) * (y - y1)) / ((x2 - x1) * (y2 - y1))
+      Q21 * (x - x1) * (y2 - y) +
+      Q12 * (x2 - x) * (y - y1) +
+      Q22 * (x - x1) * (y - y1)) / ((x2 - x1) * (y2 - y1))
   }
-
   interpolated_value
 }
 
+
+## 3. P2.1 Calculations ----
+
+rg199r2_p2_tts <- function(SV_flu, SV_tts, fluence) {
+  cf <- rg199r2_p2_cf(SV_flu, SV_tts)
+  calculate_tts(cf, fluence)
+}
+
+
+rg199r2_p2_cf <- function(SV_flu, SV_tts) {
+  ff <- rg199r2_ff(SV_flu)
+  sum(ff * SV_tts) / sum(ff^2) # Returns a single CF value
+}
+
+
+rg199r2_p2_sd <- function(product_form, SV_flu, SV_tts) {
+  cf <- rg199r2_p2_cf(SV_flu, SV_tts) # Single CF value
+  best_tts <- cf * rg199r2_ff(SV_flu)
+  scatter <- abs(SV_tts - best_tts)
+  max_scatter <- max(scatter)
+
+  base_weld <- c("B" = 17, "W" = 28)
+  threshold <- base_weld[product_form]
+  half_val <- threshold / 2 # 8.5 or 14
+  if (max_scatter > threshold) threshold else half_val
+}
+
+
+rg199r2_p2_margin <- function(product_form, SV_flu, SV_tts, fluence) {
+  tts <- rg199r2_p2_tts(SV_flu, SV_tts, fluence) # Calculate TTS
+  margin <- 2 * rg199r2_p2_sd(product_form, SV_flu, SV_tts) # Margin is 2 * SD
+  ifelse(margin > tts, tts, margin) # The smaller of TTS or Margin
+}
+
+
+# 4. Utility Functions ----
+# These are internal-use functions common to Position 1.1 and 1.2 implementations.
+
+# Fluence Factor (FF)
+# Computes Fluence Factor from fluence in n/cm² (numeric vector)
+rg199r2_ff <- function(fluence) {
+  stopifnot(is.numeric(fluence), all(fluence >= 0))
+  f19 <- fluence / 1e19
+  f19^(0.28 - 0.1 * log10(f19))
+}
+
+
+# TTS from CF and fluence
+# Generalized computation: TTS = CF × FF
+calculate_tts <- function(cf, fluence) {
+  cf * rg199r2_ff(fluence)
+}
+
+# Safe Product Form Parser
+# Maps input form ("F", "P") to "B" and validates
+parse_product_form <- function(product_form) {
+  form <- as.character(product_form)
+  if (any(!form %in% c("B", "F", "P", "W"))) {
+    stop("Invalid product_form. Must be one of 'B', 'F', 'P', 'W'.")
+  }
+  ifelse(form == "W", "W", "B")
+}
+
+# 벡터 길이 확장
+rep_expand <- function(x, max_len) {
+  # 길이 1개인 벡터를 max_len으로 확장
+  if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
+}

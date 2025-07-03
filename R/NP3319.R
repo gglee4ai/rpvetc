@@ -48,7 +48,7 @@
 #' # Example 4: Compute Standard Deviation (SD) for base metal
 #' NP3319(product_form = "B", output = "SD")
 #'
-#' @seealso \code{\link{CR3391}}, \code{\link{RG199R2}}
+#' @seealso \code{\link{CR3391}}, \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
 #'
 #' @export
 NP3319 <- function(product_form = NULL,
