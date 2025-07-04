@@ -30,8 +30,10 @@
 #'         the unit depends on \code{temperature_unit}. FF is unitless.
 #'
 #' @examples
-#' NP3319(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19, output = "TTS",
-#'        temperature_unit = "Celsius")
+#' NP3319(
+#'   product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19, output = "TTS",
+#'   temperature_unit = "Celsius"
+#' )
 #' NP3319(product_form = "W", Cu = 0.2, Ni = 0.5, output = "CF", temperature_unit = "Fahrenheit")
 #' NP3319(product_form = "F", fluence = 1e19, output = "FF")
 #' NP3319(product_form = "B", output = "SD")
