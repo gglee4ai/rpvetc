@@ -73,16 +73,16 @@
 #' @seealso \code{\link{E900_15}} for the base model without flux correction
 #' @export
 E900_15_flux <- function(product_form,
-                      Cu,
-                      Ni,
-                      Mn,
-                      P,
-                      temperature,
-                      fluence,
-                      flux,
-                      output = c("TTS", "SD", "TTS1", "TTS2"),
-                      output_unit = c("Celsius", "Fahrenheit"),
-                      temperature_unit = c("Celsius", "Fahrenheit")) {
+                         Cu,
+                         Ni,
+                         Mn,
+                         P,
+                         temperature,
+                         fluence,
+                         flux,
+                         output = c("TTS", "SD", "TTS1", "TTS2"),
+                         output_unit = c("Celsius", "Fahrenheit"),
+                         temperature_unit = c("Celsius", "Fahrenheit")) {
   # Input requirement checks
   output <- match.arg(output, several.ok = FALSE)
   output_unit <- match.arg(output_unit, several.ok = FALSE)
