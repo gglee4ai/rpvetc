@@ -102,7 +102,7 @@ E900_15_flux <- function(product_form,
 
   # Convert input temperature unit
   if (temperature_unit == "Fahrenheit") {
-    temperature <- dF_to_dC(temperature)
+    temperature <- F_to_C(temperature)
   }
 
   # Expand vectors
