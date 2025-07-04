@@ -19,7 +19,7 @@ The package includes various embrittlement models such as:
 - **Regulatory Guide 1.99 Rev. 2 (RG199R2)**
 - **NUREG/CR-3391 (CR3391)**
 - **ASTM E900-15e2 (E900_15)**
-- **ASTM E900-15e2 with MRP-462 Flux Effects (E900_flux)**
+- **ASTM E900-15e2 with MRP-462 Flux Effects (E900_15_flux)**
 - **Odette’s Model in EPRI NP-3319 (NP3319)**
 
 ## Installation
@@ -56,11 +56,11 @@ E900_15(product_form = "P", Cu = 0.2, Ni = 0.18, Mn = 1.36,
 
 ### Example: Considering Flux Effects in TTS Calculation
 
-The following example uses `E900_flux` to compute TTS while
+The following example uses `E900_15_flux` to compute TTS while
 incorporating flux effects:
 
 ``` r
-E900_flux(product_form = "P", Cu = 0.2, Ni = 0.18, Mn = 1.36, 
+E900_15_flux(product_form = "P", Cu = 0.2, Ni = 0.18, Mn = 1.36, 
           P = 0.012, temperature = 290, fluence = 2.56894e18, flux = 1e13)
 #> [1] 31.81079
 # Expected output: 31.81079

@@ -1,4 +1,4 @@
-fNP3319 <- function(...) NP3319(..., temperature_unit = "F")
+fNP3319 <- function(...) NP3319(..., output_unit = "F")
 
 ## 단일값 계산
 test_that("fluence를 입력하지 않는 경우", {
@@ -7,12 +7,12 @@ test_that("fluence를 입력하지 않는 경우", {
 })
 
 test_that("fluence 있을 경우, NP3319 TTS 계산", {
-  test1 <- NP3319("B", 0.1, 0.6, 1e18, temperature_unit = "C")
+  test1 <- NP3319("B", 0.1, 0.6, 1e18, output_unit = "C")
   expect_equal(round(test1, 2), c(10.45))
 })
 
 test_that("fluence 있을 경우, NP3319 TTS 화씨 계산", {
-  test1 <- NP3319("B", 0.1, 0.6, 1e18, temperature_unit = "F")
+  test1 <- NP3319("B", 0.1, 0.6, 1e18, output_unit = "F")
   expect_equal(round(test1, 2), c(18.82))
 })
 

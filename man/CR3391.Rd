@@ -10,20 +10,20 @@ CR3391(
   Ni = NULL,
   fluence = NULL,
   output = c("TTS", "CF", "FF", "SD"),
-  temperature_unit = c("Celsius", "Fahrenheit")
+  output_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
-\item{product_form}{Character vector, one of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
+\item{product_form}{Character vector. One of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
 \code{"F"} (forgings) and \code{"P"} (plates) are treated as base metal (\code{"B"}).}
 
-\item{Cu}{Numeric vector, copper content in weight percent (wt\%). Must be between 0 and 100.}
+\item{Cu}{Numeric vector. Copper content in weight percent (wt\%). Must be between 0 and 100.}
 
-\item{Ni}{Numeric vector, nickel content in weight percent (wt\%). Must be between 0 and 100.}
+\item{Ni}{Numeric vector. Nickel content in weight percent (wt\%). Must be between 0 and 100.}
 
-\item{fluence}{Numeric vector, neutron fluence in n/cm².}
+\item{fluence}{Numeric vector. Neutron fluence in n/cm².}
 
-\item{output}{Character, one of:
+\item{output}{Character. One of:
 \itemize{
 \item \code{"TTS"} – Transition Temperature Shift
 \item \code{"CF"} – Chemistry Factor
@@ -32,15 +32,15 @@ CR3391(
 \item \code{"Margin"} – Regulatory Margin
 }}
 
-\item{temperature_unit}{Character, one of:
+\item{output_unit}{Character. Unit of the output result. One of:
 \itemize{
-\item \code{"Celsius"} – Return results in degrees Celsius
+\item \code{"Celsius"} – Return results in degrees Celsius (default)
 \item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
 }}
 }
 \value{
 A numeric vector of computed values for the selected \code{output}. For TTS, CF, and SD,
-the unit depends on \code{temperature_unit}. FF is unitless.
+the unit depends on \code{output_unit}. FF is unitless.
 }
 \description{
 Computes the Transition Temperature Shift (TTS), Chemistry Factor (CF),
@@ -52,9 +52,16 @@ This model estimates radiation-induced embrittlement in reactor pressure vessel 
 based on copper and nickel content and neutron fluence. It distinguishes between base and weld metals.
 }
 \examples{
+# Compute TTS for base metal in Celsius
 CR3391(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19, output = "TTS")
+
+# Compute CF for weld metal
 CR3391(product_form = "W", Cu = 0.2, Ni = 0.5, output = "CF")
+
+# Compute FF for fluence only
 CR3391(fluence = 1e19, output = "FF")
+
+# Compute SD for base metal
 CR3391(product_form = "B", output = "SD")
 
 }

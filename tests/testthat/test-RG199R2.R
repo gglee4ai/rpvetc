@@ -4,12 +4,12 @@ library(testthat)
 # Helper Wrappers for Testing
 # -------------------------------
 
-rg199r2_p1 <- function(..., temperature_unit = "F") {
-  RG199R2_P1(..., temperature_unit = temperature_unit)
+rg199r2_p1 <- function(..., output_unit = "F") {
+  RG199R2_P1(..., output_unit = output_unit)
 }
 
-rg199r2_p2 <- function(..., temperature_unit = "F") {
-  RG199R2_P2(..., temperature_unit = temperature_unit)
+rg199r2_p2 <- function(..., output_unit = "F") {
+  RG199R2_P2(..., output_unit = output_unit)
 }
 
 # -------------------------------
@@ -55,7 +55,7 @@ test_that("P1: Margin for base and weld metals", {
 })
 
 test_that("P1: TTS in Celsius", {
-  test1 <- rg199r2_p1("B", 0.2, 0.2, 1e19, temperature_unit = "C")
+  test1 <- rg199r2_p1("B", 0.2, 0.2, 1e19, output_unit = "C")
   expect_equal(round(test1, 1), round(102 * 5 / 9, 1))
 })
 

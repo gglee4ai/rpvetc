@@ -13,32 +13,30 @@ E900_15(
   temperature,
   fluence,
   output = c("TTS", "TTS1", "TTS2", "SD"),
-  output_unit = c("Celsius", "Fahrenheit"),
-  temperature_unit = c("Celsius", "Fahrenheit")
+  output_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
-\item{product_form}{character vector, specifying the product form. Must be one of:
+\item{product_form}{Character vector, specifying the product form. Must be one of:
 \itemize{
 \item \code{"F"} - Forgings
 \item \code{"P"} - Plate
 \item \code{"W"} - Weld metal
 }}
 
-\item{Cu}{numeric vector, copper content in weight percent (wt\%). Used in TTS2 calculation.}
+\item{Cu}{Numeric vector, copper content in weight percent (wt\%). Used in TTS2 calculation.}
 
-\item{Ni}{numeric vector, nickel content in weight percent (wt\%). Used in both TTS1 and TTS2 calculations.}
+\item{Ni}{Numeric vector, nickel content in weight percent (wt\%). Used in both TTS1 and TTS2 calculations.}
 
-\item{Mn}{numeric vector, manganese content in weight percent (wt\%). Used in TTS1 calculation.}
+\item{Mn}{Numeric vector, manganese content in weight percent (wt\%). Used in TTS1 calculation.}
 
-\item{P}{numeric vector, phosphorus content in weight percent (wt\%). Used in both TTS1 and TTS2 calculations.}
+\item{P}{Numeric vector, phosphorus content in weight percent (wt\%). Used in both TTS1 and TTS2 calculations.}
 
-\item{temperature}{numeric vector, reactor operating temperature in degrees Celsius (°C) or Fahrenheit (°F).
-The unit should be specified using \code{temperature_unit}.}
+\item{temperature}{Numeric vector, reactor operating temperature in degrees Celsius (°C).}
 
-\item{fluence}{numeric vector, neutron fluence in n/cm². Must be non-negative.}
+\item{fluence}{Numeric vector, neutron fluence in n/cm². Must be non-negative.}
 
-\item{output}{character, specifying which property to compute. Must be one of:
+\item{output}{Character, specifying which property to compute. Must be one of:
 \itemize{
 \item \code{"TTS"}  - Total Transition Temperature Shift (TTS1 + TTS2)
 \item \code{"TTS1"} - First component of TTS
@@ -46,16 +44,10 @@ The unit should be specified using \code{temperature_unit}.}
 \item \code{"SD"}   - Standard Deviation of the TTS estimation
 }}
 
-\item{output_unit}{character, specifying the unit of the output result. Must be one of:
+\item{output_unit}{Character, specifying the unit of the output result. Must be one of:
 \itemize{
-\item \code{"Celsius"} - Output will be returned in degrees Celsius.
-\item \code{"Fahrenheit"} - Output will be returned in degrees Fahrenheit.
-}}
-
-\item{temperature_unit}{character, specifying the input temperature unit. Must be one of:
-\itemize{
-\item \code{"Celsius"} - Input temperature is given in degrees Celsius.
-\item \code{"Fahrenheit"} - Input temperature is given in degrees Fahrenheit.
+\item \code{"Celsius"} - Output will be returned in degrees Celsius (default)
+\item \code{"Fahrenheit"} - Output will be returned in degrees Fahrenheit
 }}
 }
 \value{
@@ -73,26 +65,34 @@ their sum (TTS), and the associated standard deviation (SD).
 }
 \examples{
 # Example 1: Compute total TTS for a plate material
-E900_15("P", Cu = 0.2, Ni = 0.18, Mn = 1.36, P = 0.012,
-        temperature = 290, fluence = 2.56894e18,
-        output = "TTS", output_unit = "Celsius", temperature_unit = "Celsius")
+E900_15("P",
+  Cu = 0.2, Ni = 0.18, Mn = 1.36, P = 0.012,
+  temperature = 290, fluence = 2.56894e18,
+  output = "TTS", output_unit = "Celsius"
+)
 
-# Example 2: Compute TTS1 component
-E900_15("F", Cu = 0.15, Ni = 0.2, Mn = 1.4, P = 0.01,
-        temperature = 300, fluence = 1e19,
-        output = "TTS1", output_unit = "Fahrenheit", temperature_unit = "Celsius")
+# Example 2: Compute TTS1 component in Fahrenheit
+E900_15("F",
+  Cu = 0.15, Ni = 0.2, Mn = 1.4, P = 0.01,
+  temperature = 300, fluence = 1e19,
+  output = "TTS1", output_unit = "Fahrenheit"
+)
 
 # Example 3: Compute TTS2 component
-E900_15("W", Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
-        temperature = 275, fluence = 5e18,
-        output = "TTS2", output_unit = "Celsius", temperature_unit = "Celsius")
+E900_15("W",
+  Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
+  temperature = 275, fluence = 5e18,
+  output = "TTS2", output_unit = "Celsius"
+)
 
 # Example 4: Compute Standard Deviation (SD) for a weld metal
-E900_15("W", Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
-        temperature = 275, fluence = 5e18,
-        output = "SD", output_unit = "Fahrenheit", temperature_unit = "Celsius")
+E900_15("W",
+  Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
+  temperature = 275, fluence = 5e18,
+  output = "SD", output_unit = "Fahrenheit"
+)
 
 }
 \seealso{
-\code{\link{E900_flux}}
+\code{\link{E900_15_flux}}
 }

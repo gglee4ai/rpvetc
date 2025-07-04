@@ -2,7 +2,7 @@
 
 export(CR3391)
 export(E900_15)
-export(E900_flux)
+export(E900_15_flux)
 export(NP3319)
 export(RG199R2_P1)
 export(RG199R2_P2)

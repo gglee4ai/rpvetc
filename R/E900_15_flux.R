@@ -18,7 +18,7 @@
 #' @param Mn numeric vector, manganese content in weight percent (wt%). Used in TTS1 calculation.
 #' @param P numeric vector, phosphorus content in weight percent (wt%). Used in both TTS1 and TTS2 calculations.
 #' @param temperature numeric vector, reactor operating temperature in degrees Celsius (°C) or Fahrenheit (°F).
-#'        The unit should be specified using \code{temperature_unit}.
+#'        The unit should be specified using \code{output_unit}.
 #' @param fluence numeric vector, neutron fluence in n/cm². Must be non-negative.
 #' @param flux numeric vector, neutron flux in n/cm²/s. Must be positive.
 #' @param output character, specifying which property to compute. Must be one of:
@@ -28,36 +28,42 @@
 #'          \item \code{"TTS2"} - Second component of TTS, incorporating flux effects
 #'          \item \code{"SD"}   - Standard Deviation of the TTS estimation
 #'        }
-#' @param temperature_unit character, specifying the input and output temperature unit. Must be one of:
+#' @param output_unit character, specifying the input and output temperature unit. Must be one of:
 #'        \itemize{
 #'          \item \code{"Celsius"} - Returns the result in degrees Celsius.
 #'          \item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
 #'        }
 #'
-#' @return A numeric vector representing the computed result in the specified \code{temperature_unit}.
+#' @return A numeric vector representing the computed result in the specified \code{output_unit}.
 #'         The value corresponds to the selected \code{output} parameter (TTS, TTS1, TTS2, or SD).
 #'
 #' @examples
 #' # Example 1: Compute total TTS for a plate material with flux effect
-#' E900_flux("P", Cu = 0.2, Ni = 0.18, Mn = 1.36, P = 0.012,
-#'           temperature = 290, fluence = 2.56894e18, flux = 1e13,
-#'           output = "TTS", temperature_unit = "Celsius")
+#' E900_15_flux("P",
+#'   Cu = 0.2, Ni = 0.18, Mn = 1.36, P = 0.012,
+#'   temperature = 290, fluence = 2.56894e18, flux = 1e13,
+#'   output = "TTS", output_unit = "Celsius"
+#' )
 #'
 #' # Example 2: Compute TTS1 component with flux effect
-#' E900_flux("F", Cu = 0.15, Ni = 0.2, Mn = 1.4, P = 0.01,
-#'           temperature = 300, fluence = 1e19, flux = 5e12,
-#'           output = "TTS1", temperature_unit = "Fahrenheit")
+#' E900_15_flux("F",
+#'   Cu = 0.15, Ni = 0.2, Mn = 1.4, P = 0.01,
+#'   temperature = 300, fluence = 1e19, flux = 5e12,
+#'   output = "TTS1", output_unit = "Fahrenheit"
+#' )
 #'
 #' # Example 3: Compute Standard Deviation (SD) for a weld metal under flux effect
-#' E900_flux("W", Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
-#'           temperature = 275, fluence = 5e18, flux = 2e13,
-#'           output = "SD", temperature_unit = "Celsius")
+#' E900_15_flux("W",
+#'   Cu = 0.25, Ni = 0.3, Mn = 1.5, P = 0.015,
+#'   temperature = 275, fluence = 5e18, flux = 2e13,
+#'   output = "SD", output_unit = "Celsius"
+#' )
 #'
 #' @seealso \code{\link{E900_15}}
 #'
 #' @export
 
-E900_flux <- function(product_form,
+E900_15_flux <- function(product_form,
                       Cu,
                       Ni,
                       Mn,
@@ -66,61 +72,33 @@ E900_flux <- function(product_form,
                       fluence,
                       flux,
                       output = c("TTS", "SD", "TTS1", "TTS2"),
-                      temperature_unit = c("Celsius", "Fahrenheit")) {
-  #------------------------------------#
-  # 0) 기본 설정
-  #------------------------------------#
-  output <- match.arg(output)
-  temperature_unit <- match.arg(temperature_unit)
+                      output_unit = c("Celsius", "Fahrenheit")) {
+  # Input requirement checks
+  output <- match.arg(output, several.ok = FALSE)
+  output_unit <- match.arg(output_unit, several.ok = FALSE)
 
-  #------------------------------------#
-  # 1) 입력값 검증
-  #------------------------------------#
-  product_form <- as.character(product_form)
-  stopifnot(product_form %in% c("F", "P", "W"))
+  form <- as.character(product_form)
+  if (any(!form %in% c("F", "P", "W"))) {
+    stop("Invalid 'product_form'. Must be one of: 'F', 'P', or 'W'.")
+  }
   stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
   stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
   stopifnot(is.numeric(Mn), all(Mn >= 0 & Mn <= 100))
   stopifnot(is.numeric(P), all(P >= 0 & P <= 100))
-  stopifnot(is.numeric(temperature))
+  stopifnot(is.numeric(temperature), all(temperature >= -273.15))
   stopifnot(is.numeric(fluence), all(fluence >= 0))
-  stopifnot(is.numeric(flux), all(flux > 0))
+  stopifnot(is.numeric(flux), all(flux >= 0))
 
-  #------------------------------------#
-  # 2) 온도 입력을 "섭씨"로 통일
-  #------------------------------------#
-  if (temperature_unit == "Fahrenheit") {
-    # °F -> °C
-    temperature <- (5 / 9) * (temperature - 32)
-  }
-
-  #------------------------------------#
-  # 2) 입력값 길이 검사
-  #------------------------------------#
-  arg_list <- list(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
-  arg_len <- sapply(arg_list, length)
-  max_len <- max(arg_len)
-
-  # 길이가 1, max_len 두 가지 경우만 허용
-  stopifnot(all(arg_len %in% c(1L, max_len)))
-
-  # 벡터 길이 확장
-  replicate_to_max <- function(x, max_len) {
-    if (length(x) < max_len) rep(x, length.out = max_len) else x
-  }
-  product_form <- replicate_to_max(product_form, max_len)
-  Cu <- replicate_to_max(Cu, max_len)
-  Ni <- replicate_to_max(Ni, max_len)
-  Mn <- replicate_to_max(Mn, max_len)
-  P <- replicate_to_max(P, max_len)
-  temperature <- replicate_to_max(temperature, max_len)
-  fluence <- replicate_to_max(fluence, max_len)
-  flux <- replicate_to_max(flux, max_len)
-
-  #------------------------------------#
-  # 4) 주요 계산 함수들
-  #    - 모두 "temperature"를 섭씨로 취급
-  #------------------------------------#
+  # Expand vectors
+  expanded <- expand_vectors(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
+  pf <- expanded[[1]]
+  cu <- expanded[[2]]
+  ni <- expanded[[3]]
+  mn <- expanded[[4]]
+  ps <- expanded[[5]]
+  tc <- expanded[[6]]
+  fl <- expanded[[7]]
+  fx <- expanded[[8]]
 
   # TTS1
   calc_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence, flux) {
@@ -132,7 +110,7 @@ E900_flux <- function(product_form,
     out <- out * (0.29 + (Ni^17.63) / 0.63)^0.107
     out <- out * (Mn / 1.36)^0.44
     out <- out * (log10flux / 11.8)^1.64
-    out * (5 / 9) # 최종 결과는 degC
+    out * (5 / 9)
   }
 
   # TTS2
@@ -145,48 +123,36 @@ E900_flux <- function(product_form,
     M <- M * (0.705 + (Ni^0.64) / 0.63)^1.24
     M <- M * (log10flux / 15.9)^-0.52
     out <- pmax(pmin(Cu, 0.30) - 0.046, 0) * M
-    out * (5 / 9) # 최종 결과는 degC
+    out * (5 / 9)
   }
 
   # TTS = TTS1 + TTS2
   calc_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence, flux) {
     tts1 <- calc_tts1(product_form, Ni, Mn, P, temperature, fluence, flux)
     tts2 <- calc_tts2(product_form, Cu, Ni, P, temperature, fluence, flux)
-    tts1 + tts2 # 최종 결과는 degC
-    # 최종 결과는 degC
+    tts1 + tts2
   }
 
   # SD 계산
-  calc_sd <- function(product_form, TTS) {
+  calc_sd <- function(product_form, Cu, Ni, Mn, P, temperature, fluence, flux) {
+    tts <- calc_tts(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
     C <- c("F" = 6.818, "P" = 6.293, "W" = 6.862)[product_form]
     D <- c("F" = 0.238, "P" = 0.202, "W" = 0.237)[product_form]
-    C * TTS^D # 최종 결과는 degC
+    C * tts^D
   }
 
-  #------------------------------------#
-  # 5) switch(output)에 따라 계산
-  #------------------------------------#
+  # Output calculation
   result <- switch(output,
-    "TTS1" = calc_tts1(product_form, Ni, Mn, P, temperature, fluence, flux),
-    "TTS2" = calc_tts2(product_form, Cu, Ni, P, temperature, fluence, flux),
-    "TTS" = calc_tts(product_form, Cu, Ni, Mn, P, temperature, fluence, flux),
-    "SD" = {
-      tts <- calc_tts(product_form, Cu, Ni, Mn, P, temperature, fluence, flux)
-      calc_sd(product_form, tts)
-    }
+    "TTS1" = calc_tts1(pf, ni, mn, ps, tc, fl, fx),
+    "TTS2" = calc_tts2(pf, cu, ni, ps, tc, fl, fx),
+    "TTS" = calc_tts(pf, cu, ni, mn, ps, tc, fl, fx),
+    "SD" = calc_sd(pf, cu, ni, mn, ps, tc, fl, fx)
   )
 
-  #------------------------------------#
-  # 6) 결과 온도 변환
-  #    - 만약 최종 출력을 °F로 원하면
-  #      TTS/SD 결과(= °C)를 (×9/5)
-  #------------------------------------#
-  if (temperature_unit == "Fahrenheit") {
-    result <- result * (9 / 5)
+  # Convert degF to degC if needed
+  if (output_unit == "Fahrenheit") {
+    result <- dC_to_dF(result)
   }
 
-  #------------------------------------#
-  # 7) 반환
-  #------------------------------------#
-  return(unname(result))
+  unname(result)
 }

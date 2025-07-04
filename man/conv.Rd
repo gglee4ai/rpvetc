@@ -14,9 +14,9 @@ conv
 A list of commonly used unit conversion functions. Each element is named by its conversion direction.
 }
 \examples{
-conv$F_to_C(212)       # 100
-conv$ksi_to_MPa(10)    # 68.9476
-conv$ftlb_to_J(20)     # 27.1164
+conv$F_to_C(212) # 100
+conv$ksi_to_MPa(10) # 68.9476
+conv$ftlb_to_J(20) # 27.1164
 
 }
 \keyword{datasets}

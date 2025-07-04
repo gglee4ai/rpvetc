@@ -10,7 +10,7 @@ RG199R2_P2(
   SV_tts = NULL,
   fluence = NULL,
   output = c("TTS", "CF", "FF", "SD", "Margin"),
-  temperature_unit = c("Celsius", "Fahrenheit")
+  output_unit = c("Celsius", "Fahrenheit")
 )
 }
 \arguments{
@@ -32,14 +32,14 @@ RG199R2_P2(
 \item \code{"Margin"} – Regulatory Margin (min(TTS, 2×SD))
 }}
 
-\item{temperature_unit}{Character, one of:
+\item{output_unit}{Character, one of:
 \itemize{
-\item \code{"Celsius"} – Return results in degrees Celsius
+\item \code{"Celsius"} – Return results in degrees Celsius (default)
 \item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
 }}
 }
 \value{
-A numeric value or vector. For TTS, CF, and SD, the unit depends on \code{temperature_unit}.
+A numeric value or vector. For TTS, CF, and SD, the unit depends on \code{output_unit}.
 FF is unitless.
 }
 \description{
@@ -51,8 +51,17 @@ The Chemistry Factor (CF) is back-calculated by minimizing residuals of \eqn{TTS
 SD is determined by residual range compared to fixed thresholds.
 }
 \examples{
-RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), output = "CF")
-RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), fluence = 3e19, output = "TTS")
+# Back-calculate CF using surveillance data
+RG199R2_P2(
+  SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
+  output = "CF", output_unit = "Celsius"
+)
+
+# Estimate TTS at given fluence
+RG199R2_P2(
+  SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
+  fluence = 3e19, output = "TTS", output_unit = "Celsius"
+)
 
 }
 \seealso{

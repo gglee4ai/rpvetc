@@ -1,4 +1,4 @@
-fCR3391 <- function(...) CR3391(..., temperature_unit = "F")
+fCR3391 <- function(...) CR3391(..., output_unit = "F")
 
 ## 단일 계산
 test_that("섭씨로 CR3391 TTS 계산", {
@@ -7,7 +7,7 @@ test_that("섭씨로 CR3391 TTS 계산", {
 })
 
 test_that("화씨로 CR3391 TTS 계산", {
-  test1 <- CR3391("B", 0.1, 0.6, 1e18, temperature_unit = "F")
+  test1 <- CR3391("B", 0.1, 0.6, 1e18, output_unit = "F")
   expect_equal(round(test1, 2), 27.25)
 })
 
@@ -27,7 +27,7 @@ test_that("FF 계산2", {
 })
 
 test_that("FF 계산, 섭씨 단위로", {
-  test1 <- CR3391("B", 0.1, 0.6, 1e18, output = "FF", temperature_unit = "C")
+  test1 <- CR3391("B", 0.1, 0.6, 1e18, output = "FF", output_unit = "C")
   expect_equal(round(test1, 2), 0.43)
 })
 

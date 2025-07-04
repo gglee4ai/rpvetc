@@ -4,12 +4,12 @@
 #' specifically Position 1.1. This model uses tabulated Chemistry Factors and fixed Standard Deviations
 #' based on material composition and neutron fluence.
 #'
-#' @param product_form Character vector, one of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
+#' @param product_form Character vector. One of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
 #'   \code{"F"} (forgings) and \code{"P"} (plates) are treated as base metal (\code{"B"}).
-#' @param Cu Numeric vector, copper content in weight percent (wt%). Must be between 0 and 100.
-#' @param Ni Numeric vector, nickel content in weight percent (wt%). Must be between 0 and 100.
-#' @param fluence Numeric vector, neutron fluence in n/cm².
-#' @param output Character, one of:
+#' @param Cu Numeric vector. Copper content in weight percent (wt%). Must be between 0 and 100.
+#' @param Ni Numeric vector. Nickel content in weight percent (wt%). Must be between 0 and 100.
+#' @param fluence Numeric vector. Neutron fluence in n/cm².
+#' @param output Character. One of:
 #'   \itemize{
 #'     \item \code{"TTS"} – Transition Temperature Shift
 #'     \item \code{"CF"} – Chemistry Factor
@@ -17,30 +17,39 @@
 #'     \item \code{"SD"} – Standard Deviation
 #'     \item \code{"Margin"} – Regulatory Margin
 #'   }
-#' @param temperature_unit Character, one of:
+#' @param output_unit Character. Unit of the output result. One of:
 #'   \itemize{
-#'     \item \code{"Celsius"} – Return results in degrees Celsius
+#'     \item \code{"Celsius"} – Return results in degrees Celsius (default)
 #'     \item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
 #'   }
 #'
 #' @return A numeric vector of computed values for the selected \code{output}. For TTS, CF, and SD,
-#'         the unit depends on \code{temperature_unit}. FF is unitless.
+#'         the unit depends on \code{output_unit}. FF is unitless.
 #'
 #' @examples
-#' RG199R2_P1("B", Cu = 0.25, Ni = 0.8, 1e19, output = "CF", temperature_unit = "Fahrenheit")
-#' RG199R2_P1("B", Cu = 0.20, Ni = 0.7, 5e19, output = "TTS", temperature_unit = "Celsius")
+#' # Compute Chemistry Factor in Fahrenheit
+#' RG199R2_P1(
+#'   product_form = "B", Cu = 0.25, Ni = 0.8, fluence = 1e19,
+#'   output = "CF", output_unit = "Fahrenheit"
+#' )
 #'
-#' @seealso \code{\link{RG199R2_P2}}, \code{\link{NP3319}}, \code{\link{CR3391}}#'
+#' # Compute TTS in Celsius
+#' RG199R2_P1(
+#'   product_form = "B", Cu = 0.20, Ni = 0.7, fluence = 5e19,
+#'   output = "TTS", output_unit = "Celsius"
+#' )
+#'
+#' @seealso \code{\link{RG199R2_P2}}, \code{\link{NP3319}}, \code{\link{CR3391}}
 #' @export
 RG199R2_P1 <- function(product_form = NULL, # for CF
                        Cu = NULL, # for CF
                        Ni = NULL, # for CF
                        fluence = NULL, # for FF, TTS, Margin
                        output = c("TTS", "CF", "FF", "SD", "Margin"),
-                       temperature_unit = c("Celsius", "Fahrenheit")) {
+                       output_unit = c("Celsius", "Fahrenheit")) {
   # Input requirement checks
   output <- match.arg(output, several.ok = FALSE)
-  temperature_unit <- match.arg(temperature_unit, several.ok = FALSE)
+  output_unit <- match.arg(output_unit, several.ok = FALSE)
 
   if (output == "TTS" || output == "Margin") {
     if (is.null(product_form) || is.null(Cu) || is.null(Ni) || is.null(fluence)) {
@@ -91,7 +100,7 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
   )
 
   # Convert degF to degC if needed
-  if (output %in% c("TTS", "CF", "SD") && temperature_unit == "Celsius") {
+  if (output %in% c("TTS", "CF", "SD") && output_unit == "Celsius") {
     result <- dF_to_dC(result)
   }
 
@@ -117,13 +126,13 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
 #'     \item \code{"SD"} – Standard Deviation
 #'     \item \code{"Margin"} – Regulatory Margin (min(TTS, 2×SD))
 #'   }
-#' @param temperature_unit Character, one of:
+#' @param output_unit Character, one of:
 #'   \itemize{
-#'     \item \code{"Celsius"} – Return results in degrees Celsius
+#'     \item \code{"Celsius"} – Return results in degrees Celsius (default)
 #'     \item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
 #'   }
 #'
-#' @return A numeric value or vector. For TTS, CF, and SD, the unit depends on \code{temperature_unit}.
+#' @return A numeric value or vector. For TTS, CF, and SD, the unit depends on \code{output_unit}.
 #'         FF is unitless.
 #'
 #' @details
@@ -131,22 +140,29 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
 #' SD is determined by residual range compared to fixed thresholds.
 #'
 #' @examples
-#' RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), output = "CF")
-#' RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), fluence = 3e19, output = "TTS")
+#' # Back-calculate CF using surveillance data
+#' RG199R2_P2(
+#'   SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
+#'   output = "CF", output_unit = "Celsius"
+#' )
+#'
+#' # Estimate TTS at given fluence
+#' RG199R2_P2(
+#'   SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
+#'   fluence = 3e19, output = "TTS", output_unit = "Celsius"
+#' )
 #'
 #' @seealso \code{\link{RG199R2_P1}}, \code{\link{NP3319}}, \code{\link{CR3391}}
 #' @export
-
-
 RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
                        SV_flu = NULL, # SV_fluence vector
                        SV_tts = NULL, # SV_TTS vector
                        fluence = NULL, # for FF, TTS, Margin,
                        output = c("TTS", "CF", "FF", "SD", "Margin"),
-                       temperature_unit = c("Celsius", "Fahrenheit")) {
+                       output_unit = c("Celsius", "Fahrenheit")) {
   # Input requirement checks
   output <- match.arg(output, several.ok = FALSE)
-  temperature_unit <- match.arg(temperature_unit, several.ok = FALSE)
+  output_unit <- match.arg(output_unit, several.ok = FALSE)
 
   if (output %in% c("CF", "TTS", "SD", "Margin")) {
     if (is.null(SV_flu) || is.null(SV_tts)) {
@@ -191,7 +207,7 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
   )
 
   # Convert degF to degC if needed
-  if (output %in% c("TTS", "CF", "SD") && temperature_unit == "Celsius") {
+  if (output %in% c("TTS", "CF", "SD") && output_unit == "Celsius") {
     result <- dF_to_dC(result)
   }
 

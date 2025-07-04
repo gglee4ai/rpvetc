@@ -2,13 +2,13 @@
 # Vector Expansion and Standardization
 # -------------------------------
 
-#' Expand input vectors to the maximum common length
-#'
-#' Ensures all input vectors are of the same length by replicating elements
-#' of length 1 to match the maximum non-zero length among the inputs.
-#'
-#' @param ... A list of vectors to be expanded.
-#' @return A list of vectors, all of the same length.
+# Expand input vectors to the maximum common length
+#
+# Ensures all input vectors are of the same length by replicating elements
+# of length 1 to match the maximum non-zero length among the inputs.
+#
+# @param ... A list of vectors to be expanded.
+# @return A list of vectors, all of the same length.
 expand_vectors <- function(...) {
   args <- list(...)
   arg_len <- sapply(args, length)
@@ -19,17 +19,19 @@ expand_vectors <- function(...) {
   }
 
   lapply(args, function(x) {
-    if (is.null(x) || length(x) == 0) return(x)
+    if (is.null(x) || length(x) == 0) {
+      return(x)
+    }
     if (length(x) == 1 && max_len > 1) rep(x, max_len) else x
   })
 }
 
-#' Standardize product form to "B" (Base) or "W" (Weld)
-#'
-#' Converts product form identifiers to a simplified form used internally.
-#'
-#' @param product_form A character vector with values "B", "F", "P", or "W".
-#' @return A character vector with values either "B" or "W".
+# Standardize product form to "B" (Base) or "W" (Weld)
+#
+# Converts product form identifiers to a simplified form used internally.
+#
+# @param product_form A character vector with values "B", "F", "P", or "W".
+# @return A character vector with values either "B" or "W".
 to_baseweld <- function(product_form) {
   form <- as.character(product_form)
   if (any(!form %in% c("B", "F", "P", "W"))) {
@@ -82,9 +84,9 @@ J_to_ftlb <- function(x) {
 #' @description A list of commonly used unit conversion functions. Each element is named by its conversion direction.
 #'
 #' @examples
-#' conv$F_to_C(212)       # 100
-#' conv$ksi_to_MPa(10)    # 68.9476
-#' conv$ftlb_to_J(20)     # 27.1164
+#' conv$F_to_C(212) # 100
+#' conv$ksi_to_MPa(10) # 68.9476
+#' conv$ftlb_to_J(20) # 27.1164
 #'
 #' @export
 conv <- list(
