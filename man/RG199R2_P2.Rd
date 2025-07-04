@@ -14,64 +14,47 @@ RG199R2_P2(
 )
 }
 \arguments{
-\item{product_form}{Optional character vector specifying the product form. Must be one of \code{"B"} (base metal),
-\code{"F"} (forgings), \code{"P"} (plate), or \code{"W"} (weld metal). Required only for computing \code{"SD"} and \code{"Margin"}.
-Internally, \code{"F"} and \code{"P"} are treated as \code{"B"}.}
+\item{product_form}{Character vector, one of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
+\code{"F"} and \code{"P"} are treated as base metal (\code{"B"}). Required for \code{"SD"} and \code{"Margin"}.}
 
-\item{SV_flu}{Numeric vector of surveillance neutron fluence values (n/cm\eqn{^2}). Required for all calculations except FF.}
+\item{SV_flu}{Numeric vector, surveillance neutron fluence in n/cm². Must match length of \code{SV_tts}.}
 
-\item{SV_tts}{Numeric vector of corresponding measured transition temperature shifts (TTS) in Fahrenheit.
-Must be the same length as \code{SV_flu}. Required for all outputs except FF.}
+\item{SV_tts}{Numeric vector, measured transition temperature shift (TTS) in °F.}
 
-\item{fluence}{Optional numeric vector of neutron fluence values (n/cm\eqn{^2}) for which properties like FF, TTS, or Margin are to be calculated.
-If omitted, the function uses \code{SV_flu} as default.}
+\item{fluence}{Optional numeric vector, neutron fluence in n/cm² for evaluating \code{"TTS"}, \code{"FF"}, or \code{"Margin"}.}
 
-\item{output}{Character scalar indicating which property to compute. Must be one of:
+\item{output}{Character, one of:
 \itemize{
 \item \code{"TTS"} – Estimated Transition Temperature Shift
 \item \code{"CF"} – Back-calculated Chemistry Factor
 \item \code{"FF"} – Fluence Factor
-\item \code{"SD"} – Standard Deviation of surveillance data vs. model
-\item \code{"Margin"} – Regulatory Margin (minimum of TTS or 2×SD)
+\item \code{"SD"} – Standard Deviation
+\item \code{"Margin"} – Regulatory Margin (min(TTS, 2×SD))
 }}
 
-\item{temperature_unit}{Character scalar indicating the output temperature unit. Must be one of:
-\code{"Celsius"} or \code{"Fahrenheit"}.}
+\item{temperature_unit}{Character, one of:
+\itemize{
+\item \code{"Celsius"} – Return results in degrees Celsius
+\item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
+}}
 }
 \value{
-A numeric vector or scalar corresponding to the requested \code{output}. Units are:
-\itemize{
-\item \code{"FF"} – unitless
-\item others – degrees Celsius or Fahrenheit, depending on \code{temperature_unit}
-}
+A numeric value or vector. For TTS, CF, and SD, the unit depends on \code{temperature_unit}.
+FF is unitless.
 }
 \description{
-Computes radiation embrittlement-related properties using plant-specific surveillance data,
-based on an extended interpretation of the U.S. NRC \emph{Regulatory Guide 1.99 Revision 2 (1988)}.
+Computes embrittlement-related properties using surveillance test data based on an interpretation
+of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1.
 }
 \details{
-This function is designed for regulatory or engineering assessments using Position 2.1-like methodology,
-which incorporates actual surveillance fluence–shift data pairs. Using these, the Chemistry Factor (CF)
-is back-calculated, and used in combination with neutron fluence to derive transition temperature shift (TTS),
-Fluence Factor (FF), Standard Deviation (SD), and Margin. Temperature unit conversion is handled automatically.
-
-The Chemistry Factor (CF) is inferred by minimizing the squared residuals of the model:
-\eqn{TTS_i ≈ CF × FF(fluence_i)}. The Standard Deviation (SD) is selected as either half or full of the
-fixed threshold (17°F for base metal, 28°F for weld) depending on the maximum residual.
-
-For Margin, the smaller of TTS or 2×SD is returned, as per regulatory guidance.
+The Chemistry Factor (CF) is back-calculated by minimizing residuals of \eqn{TTS_i ≈ CF × FF(fluence_i)}.
+SD is determined by residual range compared to fixed thresholds.
 }
 \examples{
-# Back-calculate CF from surveillance data
 RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), output = "CF")
-
-# Compute TTS for a given fluence using inferred CF
 RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(100, 130), fluence = 3e19, output = "TTS")
-
-# Compute Margin for weld metal
-RG199R2_P2("W", c(1e19, 2e19), c(100, 130), fluence = 3e19, output = "Margin")
 
 }
 \seealso{
-\code{\link{RG199R2_P1}} for Position 1.1 (table-based) model
+\code{\link{RG199R2_P1}}, \code{\link{NP3319}}, \code{\link{CR3391}}
 }

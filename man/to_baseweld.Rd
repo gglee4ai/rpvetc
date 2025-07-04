@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{to_baseweld}
 \alias{to_baseweld}
-\title{Product Form을 "B"(Base) 또는 "W"(Weld)로 표준화하는 함수}
+\title{Standardize product form to "B" (Base) or "W" (Weld)}
 \usage{
 to_baseweld(product_form)
 }
 \arguments{
-\item{product_form}{문자열 벡터 ("B", "F", "P", "W")}
+\item{product_form}{A character vector with values "B", "F", "P", or "W".}
 }
 \value{
-"B" 또는 "W"로 변환된 문자열 벡터
+A character vector with values either "B" or "W".
 }
 \description{
-Product Form을 "B"(Base) 또는 "W"(Weld)로 표준화하는 함수
+Converts product form identifiers to a simplified form used internally.
 }

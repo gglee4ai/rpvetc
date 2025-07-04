@@ -2,16 +2,17 @@
 % Please edit documentation in R/utils.R
 \name{expand_vectors}
 \alias{expand_vectors}
-\title{입력 벡터들을 가장 긴 길이에 맞게 확장하는 함수}
+\title{Expand input vectors to the maximum common length}
 \usage{
 expand_vectors(...)
 }
 \arguments{
-\item{...}{확장할 벡터들의 리스트}
+\item{...}{A list of vectors to be expanded.}
 }
 \value{
-길이가 확장된 벡터들의 리스트
+A list of vectors, all of the same length.
 }
 \description{
-입력 벡터들을 가장 긴 길이에 맞게 확장하는 함수
+Ensures all input vectors are of the same length by replicating elements
+of length 1 to match the maximum non-zero length among the inputs.
 }

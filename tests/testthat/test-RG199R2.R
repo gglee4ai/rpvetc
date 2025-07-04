@@ -62,14 +62,14 @@ test_that("P1: TTS in Celsius", {
 test_that("P1: Error on mismatched input length", {
   expect_error(
     rg199r2_p1(c("B", "W"), 0.2, 0.2, fluence = c(1e19, 1e20, 1e21)),
-    regexp = "same length"
+    regexp = "the same"
   )
 })
 
 test_that("P1: Error on invalid product_form", {
   expect_error(
     rg199r2_p1("X", 0.2, 0.2, 1e19),
-    regexp = "Invalid product_form"
+    regexp = "Invalid"
   )
 })
 

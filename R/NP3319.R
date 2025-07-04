@@ -37,19 +37,17 @@
 #' NP3319(product_form = "B", output = "SD")
 #'
 #' @seealso \code{\link{CR3391}}, \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
-#'
 #' @export
-
 NP3319 <- function(product_form = NULL,
                    Cu = NULL,
                    Ni = NULL,
                    fluence = NULL,
                    output = c("TTS", "CF", "FF", "SD"),
                    temperature_unit = c("Celsius", "Fahrenheit")) {
+  # Input requirement checks
   output <- match.arg(output, several.ok = FALSE)
   temperature_unit <- match.arg(temperature_unit, several.ok = FALSE)
 
-  # Input requirement checks
   if (output %in% c("TTS", "CF") &&
     (is.null(product_form) || is.null(Cu) || is.null(Ni))) {
     stop("For 'TTS' or 'CF' calculation, 'product_form', 'Cu', and 'Ni' must be provided.")

@@ -34,8 +34,8 @@ CR3391(
 
 \item{temperature_unit}{Character, one of:
 \itemize{
-\item \code{"Celsius"} Return results in degrees Celsius
-\item \code{"Fahrenheit"} Return results in degrees Fahrenheit
+\item \code{"Celsius"} – Return results in degrees Celsius
+\item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
 }}
 }
 \value{

@@ -14,16 +14,16 @@ RG199R2_P1(
 )
 }
 \arguments{
-\item{product_form}{Character vector specifying the product form. Must be one of \code{"B"} (base metal),
-\code{"F"} (forgings), \code{"P"} (plate), or \code{"W"} (weld metal). \code{"F"} and \code{"P"} are internally treated as \code{"B"}.}
+\item{product_form}{Character vector, one of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
+\code{"F"} (forgings) and \code{"P"} (plates) are treated as base metal (\code{"B"}).}
 
-\item{Cu}{Numeric vector of copper content (wt\%). Required to compute CF, TTS, and Margin.}
+\item{Cu}{Numeric vector, copper content in weight percent (wt\%). Must be between 0 and 100.}
 
-\item{Ni}{Numeric vector of nickel content (wt\%). Required to compute CF, TTS, and Margin.}
+\item{Ni}{Numeric vector, nickel content in weight percent (wt\%). Must be between 0 and 100.}
 
-\item{fluence}{Numeric vector of neutron fluence (n/cm\eqn{^2}). Required for FF, TTS, and Margin calculations.}
+\item{fluence}{Numeric vector, neutron fluence in n/cm².}
 
-\item{output}{Character scalar specifying which property to compute. Must be one of:
+\item{output}{Character, one of:
 \itemize{
 \item \code{"TTS"} – Transition Temperature Shift
 \item \code{"CF"} – Chemistry Factor
@@ -32,41 +32,26 @@ RG199R2_P1(
 \item \code{"Margin"} – Regulatory Margin
 }}
 
-\item{temperature_unit}{Character scalar indicating the output temperature unit. Must be one of:
-\code{"Celsius"} or \code{"Fahrenheit"}.}
+\item{temperature_unit}{Character, one of:
+\itemize{
+\item \code{"Celsius"} – Return results in degrees Celsius
+\item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
+}}
 }
 \value{
-A numeric vector containing the result corresponding to \code{output}. Units are:
-\itemize{
-\item \code{"FF"} – unitless
-\item others – degrees Celsius or Fahrenheit, depending on \code{temperature_unit}
-}
+A numeric vector of computed values for the selected \code{output}. For TTS, CF, and SD,
+the unit depends on \code{temperature_unit}. FF is unitless.
 }
 \description{
-Computes radiation embrittlement-related properties based on the U.S. NRC \emph{Regulatory Guide 1.99 Revision 2 (1988)},
-specifically following the Position 1.1 methodology. This position defines empirical models for evaluating the
-embrittlement of reactor pressure vessel (RPV) materials, based on material composition and neutron fluence.
-}
-\details{
-This is the main interface function for Position 1.1. Given the product form, copper and nickel contents, and
-neutron fluence, it internally computes the requested output using table-based or empirical expressions defined in the guide.
-Temperature unit conversion is handled automatically. This function does not use surveillance test data and relies only on
-Position 1.1 (i.e., tabulated Chemistry Factor and fixed Standard Deviation).
+Computes radiation embrittlement-related properties based on the U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988),
+specifically Position 1.1. This model uses tabulated Chemistry Factors and fixed Standard Deviations
+based on material composition and neutron fluence.
 }
 \examples{
-# Compute Chemistry Factor using Cu/Ni
-RG199R2_P1("B", Cu = 0.25, Ni = 0.8, fluence = 1e19, output = "CF", temperature_unit = "Fahrenheit")
-
-# Compute Fluence Factor for a given fluence
-RG199R2_P1(fluence = 1e19, output = "FF")
-
-# Compute TTS using Cu/Ni and fluence
-RG199R2_P1("B", Cu = 0.2, Ni = 0.7, fluence = 5e19, output = "TTS", temperature_unit = "Celsius")
-
-# Compute Margin using base metal data
-RG199R2_P1("B", Cu = 0.15, Ni = 0.9, fluence = 3e19, output = "Margin")
+RG199R2_P1("B", Cu = 0.25, Ni = 0.8, 1e19, output = "CF", temperature_unit = "Fahrenheit")
+RG199R2_P1("B", Cu = 0.20, Ni = 0.7, 5e19, output = "TTS", temperature_unit = "Celsius")
 
 }
 \seealso{
-\code{\link{RG199R2_P2}} for Position 2.1 model
+\code{\link{RG199R2_P2}}, \code{\link{NP3319}}, \code{\link{CR3391}}#'
 }
