@@ -9,7 +9,7 @@ rg199r2_p1 <- function(..., output_unit = "F") {
 }
 
 rg199r2_p2 <- function(..., output_unit = "F") {
-  RG199R2_P2(..., output_unit = output_unit)
+  RG199R2_P2(..., output_unit = output_unit, SV_tts_unit = output_unit)
 }
 
 # -------------------------------
@@ -150,4 +150,15 @@ test_that("P2: SD for multiple weld inputs", {
 test_that("P2: Margin for multiple weld inputs", {
   test1 <- rg199r2_p2(rep("W", 5), fluence = 10^(17:21), output = "Margin", SV_flu = flu2, SV_tts = tts2)
   expect_equal(round(test1, 2), c(14.73, 28.00, 28.00, 28.00, 28.00))
+})
+
+
+test_that("P2: CF in Celcius", {
+  test1 <- rg199r2_p2(SV_flu = flu2, SV_tts = tts2, output = "CF")
+  expect_equal(round(test1, 2), 134.37)
+})
+
+test_that("P2: CF in Fahrenheit", {
+  test1 <- RG199R2_P2(SV_flu = flu2, SV_tts = tts2, output = "CF")
+  expect_equal(round(test1, 2), 134.37)
 })

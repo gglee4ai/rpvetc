@@ -39,7 +39,8 @@ test_that("Repeated test for SD (should return same value)", {
 })
 
 test_that("Output in Fahrenheit is converted correctly from Celsius", {
-  test1 <- E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18, output_unit = "F")
+  test1 <- E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.56894e18,
+                   output_unit = "F", temperature_unit = "C")
   expect_equal(round(test1, 2), c(57.14))
 })
 

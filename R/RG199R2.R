@@ -110,46 +110,100 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
 
 #' Regulatory Guide 1.99 Rev. 2 Position 2.1 Surveillance-Based Embrittlement Property Calculator
 #'
-#' Computes embrittlement-related properties using surveillance test data based on an interpretation
+#' Computes embrittlement-related properties using surveillance test data based on the interpretation
 #' of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1.
 #'
-#' @param product_form Character vector, one of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
-#'   \code{"F"} and \code{"P"} are treated as base metal (\code{"B"}). Required for \code{"SD"} and \code{"Margin"}.
-#' @param SV_flu Numeric vector, surveillance neutron fluence in n/cm². Must match length of \code{SV_tts}.
-#' @param SV_tts Numeric vector, measured transition temperature shift (TTS) in °F.
-#' @param fluence Optional numeric vector, neutron fluence in n/cm² for evaluating \code{"TTS"}, \code{"FF"}, or \code{"Margin"}.
-#' @param output Character, one of:
-#'   \itemize{
-#'     \item \code{"TTS"} – Estimated Transition Temperature Shift
-#'     \item \code{"CF"} – Back-calculated Chemistry Factor
-#'     \item \code{"FF"} – Fluence Factor
-#'     \item \code{"SD"} – Standard Deviation
-#'     \item \code{"Margin"} – Regulatory Margin (min(TTS, 2×SD))
-#'   }
-#' @param output_unit Character, one of:
-#'   \itemize{
-#'     \item \code{"Celsius"} – Return results in degrees Celsius (default)
-#'     \item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
-#'   }
+#' The function estimates key embrittlement parameters such as Transition Temperature Shift (TTS),
+#' Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Regulatory Margin using
+#' surveillance capsule data from reactor pressure vessel materials.
 #'
-#' @return A numeric value or vector. For TTS, CF, and SD, the unit depends on \code{output_unit}.
-#'         FF is unitless.
+#' @param product_form Optional character vector indicating the product form of the material.
+#'   Must be one of:
+#'   \itemize{
+#'     \item \code{"B"} – Base metal
+#'     \item \code{"F"} – Forgings (treated as base metal)
+#'     \item \code{"P"} – Plate (treated as base metal)
+#'     \item \code{"W"} – Weld metal
+#'   }
+#'   Required when computing \code{"SD"} or \code{"Margin"}.
+#' @param SV_flu Numeric vector of surveillance neutron fluence values in n/cm². Must be the same length as \code{SV_tts}.
+#' @param SV_tts Numeric vector of measured transition temperature shift (TTS) values. Unit is specified by \code{SV_tts_unit}.
+#' @param fluence Optional numeric value or vector of neutron fluence in n/cm² at which to evaluate
+#'   \code{"TTS"}, \code{"FF"}, or \code{"Margin"}. Not required for \code{"CF"} or \code{"SD"}.
+#' @param output Character string specifying which property to compute. Must be one of:
+#'   \itemize{
+#'     \item \code{"TTS"} – Estimated Transition Temperature Shift at the specified fluence
+#'     \item \code{"CF"} – Back-calculated Chemistry Factor from surveillance data
+#'     \item \code{"FF"} – Fluence Factor at the given fluence
+#'     \item \code{"SD"} – Standard Deviation of the surveillance data fit
+#'     \item \code{"Margin"} – Regulatory margin defined as \eqn{min(TTS, 2 × SD)}
+#'   }
+#' @param output_unit Character string specifying the output unit for TTS, CF, SD, and Margin.
+#'   Must be one of:
+#'   \itemize{
+#'     \item \code{"Celsius"} – Results returned in degrees Celsius (default)
+#'     \item \code{"Fahrenheit"} – Results returned in degrees Fahrenheit
+#'   }
+#' @param SV_tts_unit Character string specifying the unit of the input \code{SV_tts}.
+#'   Must be one of:
+#'   \itemize{
+#'     \item \code{"Celsius"}
+#'     \item \code{"Fahrenheit"}
+#'   }
+#'   Defaults to \code{output_unit} if not explicitly specified.
+#'
+#' @return A numeric value or vector corresponding to the specified \code{output}:
+#'   \itemize{
+#'     \item For \code{"TTS"}, \code{"CF"}, \code{"SD"}, and \code{"Margin"} – unit depends on \code{output_unit}
+#'     \item For \code{"FF"} – unitless
+#'   }
 #'
 #' @details
-#' The Chemistry Factor (CF) is back-calculated by minimizing residuals of \eqn{TTS_i ≈ CF × FF(fluence_i)}.
-#' SD is determined by residual range compared to fixed thresholds.
+#' - The Chemistry Factor (CF) is back-calculated by minimizing residuals between measured and predicted TTS.
+#' - Standard Deviation (SD) is estimated by comparing the residual range against acceptance thresholds.
+#' - TTS and FF are evaluated at the specified fluence using the back-calculated CF.
 #'
 #' @examples
-#' # Back-calculate CF using surveillance data
+#' # Example 1: Back-calculate CF using surveillance data
 #' RG199R2_P2(
-#'   SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
-#'   output = "CF", output_unit = "Celsius"
+#'   product_form = "B",
+#'   SV_flu = c(1e19, 2e19),
+#'   SV_tts = c(100, 130),
+#'   output = "CF",
+#'   output_unit = "Celsius",
+#'   SV_tts_unit = "Celsius"
 #' )
 #'
-#' # Estimate TTS at given fluence
+#' # Example 2: Estimate TTS at target fluence
 #' RG199R2_P2(
-#'   SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
-#'   fluence = 3e19, output = "TTS", output_unit = "Celsius"
+#'   product_form = "P",
+#'   SV_flu = c(1e19, 2e19),
+#'   SV_tts = c(212, 239),
+#'   fluence = 3e19,
+#'   output = "TTS",
+#'   output_unit = "Fahrenheit",
+#'   SV_tts_unit = "Fahrenheit"
+#' )
+#'
+#' # Example 3: Compute SD for weld metal
+#' RG199R2_P2(
+#'   product_form = "W",
+#'   SV_flu = c(1e19, 2e19),
+#'   SV_tts = c(105, 137),
+#'   output = "SD",
+#'   output_unit = "Celsius",
+#'   SV_tts_unit = "Celsius"
+#' )
+#'
+#' # Example 4: Compute Regulatory Margin
+#' RG199R2_P2(
+#'   product_form = "P",
+#'   SV_flu = c(1e19, 2e19),
+#'   SV_tts = c(100, 130),
+#'   fluence = 4e19,
+#'   output = "Margin",
+#'   output_unit = "Celsius",
+#'   SV_tts_unit = "Celsius"
 #' )
 #'
 #' @seealso \code{\link{RG199R2_P1}}, \code{\link{NP3319}}, \code{\link{CR3391}}
@@ -159,10 +213,12 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
                        SV_tts = NULL, # SV_TTS vector
                        fluence = NULL, # for FF, TTS, Margin,
                        output = c("TTS", "CF", "FF", "SD", "Margin"),
-                       output_unit = c("Celsius", "Fahrenheit")) {
+                       output_unit = c("Celsius", "Fahrenheit"),
+                       SV_tts_unit = c("Celsius", "Fahrenheit")) {
   # Input requirement checks
   output <- match.arg(output, several.ok = FALSE)
   output_unit <- match.arg(output_unit, several.ok = FALSE)
+  SV_tts_unit <- match.arg(SV_tts_unit, several.ok = FALSE)
 
   if (output %in% c("CF", "TTS", "SD", "Margin")) {
     if (is.null(SV_flu) || is.null(SV_tts)) {
@@ -172,6 +228,9 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
     stopifnot(length(SV_flu) == length(SV_tts))
     stopifnot(all(SV_tts[SV_flu == 0] == 0))
     stopifnot(sum(SV_flu > 0) >= 2)
+  }
+  if (SV_tts_unit == "Celsius") {
+    SV_tts <- dC_to_dF(SV_tts)
   }
 
   if (!is.null(fluence)) {
@@ -226,7 +285,6 @@ calc_p1_tts <- function(product_form, Cu, Ni, fluence) {
 calc_p1_cf <- function(product_form, Cu, Ni) {
   n <- length(product_form)
   cf <- numeric(n)
-
   for (i in seq_len(n)) {
     pf <- product_form[i]
     cu <- Cu[i]
@@ -238,7 +296,6 @@ calc_p1_cf <- function(product_form, Cu, Ni) {
       calc_p1_cf_weld(cu, ni)
     }
   }
-
   cf
 }
 
