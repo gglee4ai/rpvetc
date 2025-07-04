@@ -194,9 +194,7 @@ RG199R2_P2 <- function(
     stopifnot((sum(SV_flu > 0) >= 2)) # At least two valid surveillance data points required
   }
 
-  if (is.null(fluence)) {
-    fluence <- SV_flu
-  } else {
+  if (!is.null(fluence)) {
     stopifnot(is.numeric(fluence), all(fluence >= 0))
   }
 
@@ -210,18 +208,35 @@ RG199R2_P2 <- function(
   }
 
   #------------------------------------#
-  # 2) 출력값 선택
+  # 2) 입력값 길이 검사 및 확장
+  #------------------------------------#
+  # 필요한 인자들의 길이 파악
+  arg_list <- list(product_form, fluence)
+  arg_len <- sapply(arg_list, length)
+  max_len <- max(arg_len)
+
+  # 길이가 0 (NULL), 1, max_len 세 가지 경우만 허용
+  if (!all(arg_len %in% c(0, 1, max_len))) {
+    stop("product_form, Cu, Ni, and fluence must have length 0, 1 or the same length.")
+  }
+
+  # 변수 길이 확장
+  pf <- rep_expand(product_form, max_len)
+  fl <- rep_expand(fluence, max_len)
+
+  #------------------------------------#
+  # 3) 출력값 선택
   #------------------------------------#
   result <- switch(output,
-    "TTS" = rg199r2_p2_tts(SV_flu, SV_tts, fluence),
+    "TTS" = rg199r2_p2_tts(SV_flu, SV_tts, fl),
     "CF" = rg199r2_p2_cf(SV_flu, SV_tts),
-    "FF" = rg199r2_ff(fluence),
-    "SD" = rg199r2_p2_sd(product_form, SV_flu, SV_tts),
-    "Margin" = rg199r2_p2_margin(product_form, SV_flu, SV_tts, fluence)
+    "FF" = rg199r2_ff(fl),
+    "SD" = rg199r2_p2_sd(pf, SV_flu, SV_tts),
+    "Margin" = rg199r2_p2_margin(pf, SV_flu, SV_tts, fl)
   )
 
   #------------------------------------#
-  # 3) 결과 온도 변환
+  # 4) 결과 온도 변환
   #------------------------------------#
   if (temperature_unit == "Celsius" && output != "FF") {
     result <- result * (5 / 9)
@@ -398,7 +413,8 @@ interp2d_linear <- function(x_values, y_values, table, x, y) {
 
 rg199r2_p2_tts <- function(SV_flu, SV_tts, fluence) {
   cf <- rg199r2_p2_cf(SV_flu, SV_tts)
-  calculate_tts(cf, fluence)
+  fl <- if (is.null(fluence)) SV_flu else fluence
+  calculate_tts(cf, fl)
 }
 
 
@@ -417,7 +433,7 @@ rg199r2_p2_sd <- function(product_form, SV_flu, SV_tts) {
   base_weld <- c("B" = 17, "W" = 28)
   threshold <- base_weld[product_form]
   half_val <- threshold / 2 # 8.5 or 14
-  if (max_scatter > threshold) threshold else half_val
+  if (all(threshold < max_scatter)) threshold else half_val
 }
 
 
