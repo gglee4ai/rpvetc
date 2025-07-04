@@ -47,15 +47,17 @@
 #'
 #' @examples
 #' # Compute total TTS in Celsius
-#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.5e18, output = "TTS", output_unit = "Celsius")
+#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.5e18, output = "TTS")
 #'
 #' # Compute TTS1 in Fahrenheit with input temperature also in Fahrenheit
 #' E900_15("F", 0.15, 0.2, 1.4, 0.01, 570, 1e19,
-#'         output = "TTS1", output_unit = "Fahrenheit", temperature_unit = "Fahrenheit")
+#'   output = "TTS1", output_unit = "Fahrenheit", temperature_unit = "Fahrenheit"
+#' )
 #'
 #' # Compute SD in Celsius (default temperature input assumed in Celsius)
 #' E900_15("W", 0.25, 0.3, 1.5, 0.015, 275, 5e18,
-#'         output = "SD", output_unit = "Celsius")
+#'   output = "SD", output_unit = "Celsius"
+#' )
 #'
 #' @seealso \code{\link{E900_15_flux}} for flux-dependent modeling
 #' @export
