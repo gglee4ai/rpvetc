@@ -2,7 +2,7 @@
 % Please edit documentation in R/NP3319.R
 \name{NP3319}
 \alias{NP3319}
-\title{Odette's Model (EPRI NP-3319) Transition Temperature Shift (TTS) Calculation}
+\title{Odette's Model (EPRI NP-3319) for Transition Temperature Shift (TTS) Calculation}
 \usage{
 NP3319(
   product_form = NULL,
@@ -14,60 +14,48 @@ NP3319(
 )
 }
 \arguments{
-\item{product_form}{character vector, specifying the product form. Must be one of:
+\item{product_form}{Character vector, one of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
+\code{"F"} (forgings) and \code{"P"} (plates) are treated as base metal (\code{"B"}).}
+
+\item{Cu}{Numeric vector, copper content in weight percent (wt\%). Must be between 0 and 100.}
+
+\item{Ni}{Numeric vector, nickel content in weight percent (wt\%). Must be between 0 and 100.}
+
+\item{fluence}{Numeric vector, neutron fluence in n/cm².}
+
+\item{output}{Character, one of:
 \itemize{
-\item \code{"B"} - Base metal (includes forgings and plates)
-\item \code{"F"} - Forgings (treated as \code{"B"})
-\item \code{"P"} - Plate (treated as \code{"B"})
-\item \code{"W"} - Weld metal
+\item \code{"TTS"} – Transition Temperature Shift
+\item \code{"CF"} – Chemistry Factor
+\item \code{"FF"} – Fluence Factor
+\item \code{"SD"} – Standard Deviation
+\item \code{"Margin"} – Regulatory Margin
 }}
 
-\item{Cu}{numeric vector, copper content in weight percent (wt\%). Must be between 0 and 100.
-Not required if \code{output="FF"}.}
-
-\item{Ni}{numeric vector, nickel content in weight percent (wt\%). Must be between 0 and 100.
-Not required if \code{output="FF"}.}
-
-\item{fluence}{numeric vector, neutron fluence in n/cm². Required unless \code{output="CF"} only.}
-
-\item{output}{character, specifying which property to compute. Must be one of:
+\item{temperature_unit}{Character, one of:
 \itemize{
-\item \code{"TTS"} - Transition Temperature Shift
-\item \code{"CF"}  - Chemistry Factor
-\item \code{"FF"}  - Fluence Factor
-\item \code{"SD"}  - Standard Deviation of the TTS estimation
-}}
-
-\item{temperature_unit}{character, specifying the output temperature unit. Must be one of:
-\itemize{
-\item \code{"Celsius"} - Returns the result in degrees Celsius.
-\item \code{"Fahrenheit"} - Returns the result in degrees Fahrenheit.
+\item \code{"Celsius"} Return results in degrees Celsius
+\item \code{"Fahrenheit"} Return results in degrees Fahrenheit
 }}
 }
 \value{
-A numeric vector representing the computed result based on the selected \code{output} parameter.
-The unit depends on \code{temperature_unit}, except for Fluence Factor (\code{"FF"}), which is unitless.
+A numeric vector of computed values for the selected \code{output}. For TTS, CF, and SD,
+the unit depends on \code{temperature_unit}. FF is unitless.
 }
 \description{
-Computes the Transition Temperature Shift (TTS), Chemistry Factor (CF), Fluence Factor (FF),
-or Standard Deviation (SD) based on Odette's embrittlement model described in EPRI NP-3319 (1984).
+Computes the Transition Temperature Shift (TTS), Chemistry Factor (CF),
+Fluence Factor (FF), or Standard Deviation (SD) based on the embrittlement model
+described in EPRI NP-3319 (1984).
 }
 \details{
-This function provides estimates for embrittlement in reactor pressure vessel materials using neutron fluence
-and material composition, including copper and nickel content. The model distinguishes between base and weld metals.
+This model estimates radiation-induced embrittlement in reactor pressure vessel materials
+based on copper and nickel content and neutron fluence. It distinguishes between base and weld metals.
 }
 \examples{
-# Example 1: Compute TTS for a base metal
 NP3319(product_form = "B", Cu = 0.1, Ni = 0.6, fluence = 1e19, output = "TTS",
        temperature_unit = "Celsius")
-
-# Example 2: Compute CF (Chemistry Factor) for weld metal
 NP3319(product_form = "W", Cu = 0.2, Ni = 0.5, output = "CF", temperature_unit = "Fahrenheit")
-
-# Example 3: Compute FF (Fluence Factor) with only fluence
 NP3319(product_form = "F", fluence = 1e19, output = "FF")
-
-# Example 4: Compute Standard Deviation (SD) for base metal
 NP3319(product_form = "B", output = "SD")
 
 }
