@@ -100,7 +100,7 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
   )
 
   # Convert degF to degC if needed
-  if (output %in% c("TTS", "CF", "SD") && output_unit == "Celsius") {
+  if (output %in% c("TTS", "CF", "SD", "Margin") && output_unit == "Celsius") {
     result <- dF_to_dC(result)
   }
 
@@ -252,9 +252,11 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
   }
 
   # Expand vectors
-  expanded <- expand_vectors(product_form, fluence)
-  pf <- expanded[[1]]
-  fl <- expanded[[2]]
+  # expanded <- expand_vectors(product_form, fluence)
+  # pf <- expanded[[1]]
+  # fl <- expanded[[2]]
+  pf <- product_form
+  fl <- fluence
 
   # Output calculation
   result <- switch(output,
@@ -266,7 +268,7 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
   )
 
   # Convert degF to degC if needed
-  if (output %in% c("TTS", "CF", "SD") && output_unit == "Celsius") {
+  if (output %in% c("TTS", "CF", "SD", "Margin") && output_unit == "Celsius") {
     result <- dF_to_dC(result)
   }
 

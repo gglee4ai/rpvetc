@@ -162,3 +162,9 @@ test_that("P2: CF in Fahrenheit", {
   test1 <- RG199R2_P2(SV_flu = flu2, SV_tts = tts2, output = "CF")
   expect_equal(round(test1, 2), 134.37)
 })
+
+test_that("P2: Margin for multiple weld inputs", {
+  test1 <- rg199r2_p2(rep("W", 5), fluence = 10^(17:22), output = "TTS", SV_flu = flu2, SV_tts = tts2)
+  expect_equal(round(test1, 2), c(14.73, 56.02, 134.37, 203.38, 194.23, 117.03))
+})
+
