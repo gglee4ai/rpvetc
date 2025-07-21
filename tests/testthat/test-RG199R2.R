@@ -168,3 +168,46 @@ test_that("P2: Margin for multiple weld inputs", {
   expect_equal(round(test1, 2), c(14.73, 56.02, 134.37, 203.38, 194.23, 117.03))
 })
 
+
+
+
+# Auto dispatch → P1 사용
+RG199R2(
+  product_form = "B", Cu = 0.3, Ni = 1.0, fluence = 1e19,
+  output = "TTS", output_unit = "Celsius"
+)
+
+# Auto dispatch → P2 사용
+RG199R2(
+  product_form = "W",
+  SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
+  fluence = 3e19,
+  output = "Margin", output_unit = "Celsius"
+)
+
+# 명시적으로 Position 지정
+test_that("RG199R2 auto dispatches to P1", {
+  expect_equal(
+    RG199R2(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
+            output = "FF", output_unit = "Celsius"),
+    RG199R2_P1(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
+               output = "FF", output_unit = "Celsius")
+  )
+})
+
+# test_that("RG199R2 auto dispatches to P1", {
+#   expect_equal(
+#     RG199R2(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
+#             output = "CF", output_unit = "Celsius"),
+#     RG199R2_P2(SV_flu = flu2, SV_tts = tts2, output = "CF")
+#   )
+# })
+
+
+test_that("RG199R2 auto dispatches to P1", {
+  expect_equal(
+    RG199R2(fluence = 1e19, output = "FF"),
+    c(1)
+  )
+})
+

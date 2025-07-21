@@ -1,3 +1,50 @@
+#' Unified Interface for Regulatory Guide 1.99 Rev. 2 (Position 1.1 and 2.1)
+#'
+#' Computes embrittlement-related properties using either table-based (Position 1.1) or
+#' surveillance-based (Position 2.1) models from NRC RG 1.99 Rev. 2.
+#'
+#' @param position Character. One of \code{"auto"}, \code{"P1"}, or \code{"P2"}.
+#'   If \code{"auto"} (default), dispatch is based on provided arguments:
+#'   If \code{SV_flu} and \code{SV_tts} are provided, \code{P2} is used;
+#'   otherwise, \code{P1}.
+#' @param output One of \code{"TTS"}, \code{"CF"}, \code{"FF"}, \code{"SD"}, or \code{"Margin"}.
+#' @param output_unit One of \code{"Celsius"} (default) or \code{"Fahrenheit"}.
+#' @param ... Additional arguments passed to either \code{RG199R2_P1} or \code{RG199R2_P2}.
+#'
+#' @return A numeric result from either Position 1.1 or 2.1 model.
+#' @export
+RG199R2 <- function(position = c("auto", "P1", "P2"),
+                    output = c("TTS", "CF", "FF", "SD", "Margin"),
+                    output_unit = c("Celsius", "Fahrenheit"),
+                    ...) {
+  position <- match.arg(position)
+  output <- match.arg(output)
+  output_unit <- match.arg(output_unit)
+
+  # Capture extra args
+  args <- list(...)
+
+  # Determine position if auto
+  if (position == "auto") {
+    has_sv <- all(c("SV_flu", "SV_tts") %in% names(args))
+    position <- if (has_sv) "P2" else "P1"
+  }
+
+  # Append common args
+  args$output <- output
+  args$output_unit <- output_unit
+
+  # Dispatch
+  result <- switch(position,
+                   P1 = do.call(RG199R2_P1, args),
+                   P2 = do.call(RG199R2_P2, args),
+                   stop("Unknown position: ", position))
+
+  return(result)
+}
+
+
+
 #' Regulatory Guide 1.99 Rev. 2 Position 1.1 Table-based Embrittlement Property Calculator
 #'
 #' Computes radiation embrittlement-related properties based on the U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988),
@@ -92,11 +139,11 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
 
   # Output calculation
   result <- switch(output,
-    "TTS" = calc_p1_tts(pf, cu, ni, fl),
-    "CF" = calc_p1_cf(pf, cu, ni),
-    "FF" = calc_ff(fl),
-    "SD" = calc_p1_sd(pf),
-    "Margin" = calc_p1_margin(pf, cu, ni, fl)
+    "TTS" = rg199_p1_tts(pf, cu, ni, fl),
+    "CF" = rg199_p1_cf(pf, cu, ni),
+    "FF" = rg199_ff(fl),
+    "SD" = rg199_p1_sd(pf),
+    "Margin" = rg199_p1_margin(pf, cu, ni, fl)
   )
 
   # Convert degF to degC if needed
@@ -209,8 +256,8 @@ RG199R2_P1 <- function(product_form = NULL, # for CF
 #' @seealso \code{\link{RG199R2_P1}}, \code{\link{NP3319}}, \code{\link{CR3391}}
 #' @export
 RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
-                       SV_flu = NULL, # SV_fluence vector
-                       SV_tts = NULL, # SV_TTS vector
+                       SV_flu = NULL, # A numeric vector of length 2 or more
+                       SV_tts = NULL, # A numeric vector of length 2 or more
                        fluence = NULL, # for FF, TTS, Margin,
                        output = c("TTS", "CF", "FF", "SD", "Margin"),
                        output_unit = c("Celsius", "Fahrenheit"),
@@ -260,11 +307,11 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
 
   # Output calculation
   result <- switch(output,
-    "TTS" = calc_p2_tts(SV_flu, SV_tts, fl),
-    "CF" = calc_p2_cf(SV_flu, SV_tts),
-    "FF" = calc_ff(fl),
-    "SD" = calc_p2_sd(pf, SV_flu, SV_tts),
-    "Margin" = calc_p2_margin(pf, SV_flu, SV_tts, fl)
+    "TTS" = rg199_p2_tts(SV_flu, SV_tts, fl),
+    "CF" = rg199_p2_cf(SV_flu, SV_tts),
+    "FF" = rg199_ff(fl),
+    "SD" = rg199_p2_sd(pf, SV_flu, SV_tts),
+    "Margin" = rg199_p2_margin(pf, SV_flu, SV_tts, fl)
   )
 
   # Convert degF to degC if needed
@@ -278,13 +325,13 @@ RG199R2_P2 <- function(product_form = NULL, # for SD, Margin
 
 ## 2. P1.1 Calculations ----
 
-calc_p1_tts <- function(product_form, Cu, Ni, fluence) {
-  cf <- calc_p1_cf(product_form, Cu, Ni)
-  calc_tts(cf, fluence)
+rg199_p1_tts <- function(product_form, Cu, Ni, fluence) {
+  cf <- rg199_p1_cf(product_form, Cu, Ni)
+  rg199_tts(cf, fluence)
 }
 
 
-calc_p1_cf <- function(product_form, Cu, Ni) {
+rg199_p1_cf <- function(product_form, Cu, Ni) {
   n <- length(product_form)
   cf <- numeric(n)
   for (i in seq_len(n)) {
@@ -293,29 +340,29 @@ calc_p1_cf <- function(product_form, Cu, Ni) {
     ni <- Ni[i]
 
     cf[i] <- if (pf == "B") {
-      calc_p1_cf_base(cu, ni)
+      rg199_p1_cf_base(cu, ni)
     } else {
-      calc_p1_cf_weld(cu, ni)
+      rg199_p1_cf_weld(cu, ni)
     }
   }
   cf
 }
 
 
-calc_p1_sd <- function(product_form) {
+rg199_p1_sd <- function(product_form) {
   base_weld <- c("B" = 17, "W" = 28)
   base_weld[product_form]
 }
 
 
-calc_p1_margin <- function(product_form, Cu, Ni, fluence) {
-  tts <- calc_p1_tts(product_form, Cu, Ni, fluence) # Calculate TTS
-  margin <- 2 * calc_p1_sd(product_form) # Margin is 2 * SD
+rg199_p1_margin <- function(product_form, Cu, Ni, fluence) {
+  tts <- rg199_p1_tts(product_form, Cu, Ni, fluence) # Calculate TTS
+  margin <- 2 * rg199_p1_sd(product_form) # Margin is 2 * SD
   ifelse(margin > tts, tts, margin) # The smaller of TTS or Margin
 }
 
 
-calc_p1_cf_base <- function(Cu, Ni) { # not vectorized
+rg199_p1_cf_base <- function(Cu, Ni) { # not vectorized
   cf_base <- matrix(
     c(
       20, 20, 20, 20, 22, 25, 28, 31, 34, 37, 41, 45, 49,
@@ -351,7 +398,7 @@ calc_p1_cf_base <- function(Cu, Ni) { # not vectorized
 }
 
 
-calc_p1_cf_weld <- function(Cu, Ni) { # not vectorized
+rg199_p1_cf_weld <- function(Cu, Ni) { # not vectorized
   cf_weld <- matrix(
     c(
       20, 20, 21, 22, 24, 26, 29, 32, 36, 40, 44, 49, 52, 58,
@@ -440,22 +487,22 @@ interp2d_linear <- function(x_values, y_values, table, x, y) {
 
 ## 3. P2.1 Calculations ----
 
-calc_p2_tts <- function(SV_flu, SV_tts, fluence) {
-  cf <- calc_p2_cf(SV_flu, SV_tts)
+rg199_p2_tts <- function(SV_flu, SV_tts, fluence) {
+  cf <- rg199_p2_cf(SV_flu, SV_tts)
   fl <- if (is.null(fluence)) SV_flu else fluence
-  calc_tts(cf, fl)
+  rg199_tts(cf, fl)
 }
 
 
-calc_p2_cf <- function(SV_flu, SV_tts) {
-  ff <- calc_ff(SV_flu)
+rg199_p2_cf <- function(SV_flu, SV_tts) {
+  ff <- rg199_ff(SV_flu)
   sum(ff * SV_tts) / sum(ff^2) # Returns a single CF value
 }
 
 
-calc_p2_sd <- function(product_form, SV_flu, SV_tts) {
-  cf <- calc_p2_cf(SV_flu, SV_tts) # Single CF value
-  best_tts <- cf * calc_ff(SV_flu)
+rg199_p2_sd <- function(product_form, SV_flu, SV_tts) {
+  cf <- rg199_p2_cf(SV_flu, SV_tts) # Single CF value
+  best_tts <- cf * rg199_ff(SV_flu)
   scatter <- abs(SV_tts - best_tts)
   max_scatter <- max(scatter)
 
@@ -466,9 +513,9 @@ calc_p2_sd <- function(product_form, SV_flu, SV_tts) {
 }
 
 
-calc_p2_margin <- function(product_form, SV_flu, SV_tts, fluence) {
-  tts <- calc_p2_tts(SV_flu, SV_tts, fluence) # Calculate TTS
-  margin <- 2 * calc_p2_sd(product_form, SV_flu, SV_tts) # Margin is 2 * SD
+rg199_p2_margin <- function(product_form, SV_flu, SV_tts, fluence) {
+  tts <- rg199_p2_tts(SV_flu, SV_tts, fluence) # Calculate TTS
+  margin <- 2 * rg199_p2_sd(product_form, SV_flu, SV_tts) # Margin is 2 * SD
   ifelse(margin > tts, tts, margin) # The smaller of TTS or Margin
 }
 
@@ -478,7 +525,7 @@ calc_p2_margin <- function(product_form, SV_flu, SV_tts, fluence) {
 
 # Fluence Factor (FF)
 # Computes Fluence Factor from fluence in n/cm² (numeric vector)
-calc_ff <- function(fluence) {
+rg199_ff <- function(fluence) {
   stopifnot(is.numeric(fluence), all(fluence >= 0))
   f <- fluence / 1e19
   f^(0.28 - 0.1 * log10(f))
@@ -487,6 +534,6 @@ calc_ff <- function(fluence) {
 
 # TTS from CF and fluence
 # Generalized computation: TTS = CF × FF
-calc_tts <- function(cf, fluence) {
-  cf * calc_ff(fluence)
+rg199_tts <- function(cf, fluence) {
+  cf * rg199_ff(fluence)
 }
