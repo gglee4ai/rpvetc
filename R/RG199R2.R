@@ -13,32 +13,59 @@
 #'
 #' @return A numeric result from either Position 1.1 or 2.1 model.
 #' @export
-RG199R2 <- function(position = c("auto", "P1", "P2"),
+RG199R2 <- function(product_form = NULL,
+                    Cu = NULL,
+                    Ni = NULL,
+                    SV_flu = NULL,
+                    SV_tts = NULL,
+                    fluence = NULL,
                     output = c("TTS", "CF", "FF", "SD", "Margin"),
                     output_unit = c("Celsius", "Fahrenheit"),
-                    ...) {
-  position <- match.arg(position)
+                    SV_tts_unit = c("Celsius", "Fahrenheit"),
+                    position = c("auto", "P1", "P2")) {
+
   output <- match.arg(output)
   output_unit <- match.arg(output_unit)
+  SV_tts_unit <- match.arg(SV_tts_unit)
+  position <- match.arg(position)
 
-  # Capture extra args
-  args <- list(...)
-
-  # Determine position if auto
+  # 자동 위치 결정
   if (position == "auto") {
-    has_sv <- all(c("SV_flu", "SV_tts") %in% names(args))
-    position <- if (has_sv) "P2" else "P1"
+    if (!is.null(SV_flu) && !is.null(SV_tts)) {
+      position <- "P2"
+    } else {
+      position <- "P1"
+    }
   }
 
-  # Append common args
-  args$output <- output
-  args$output_unit <- output_unit
+  # args는 반드시 list로 정의되어야 함!
+  args <- switch(position,
+                 "P1" = list(
+                   product_form = product_form,
+                   Cu = Cu,
+                   Ni = Ni,
+                   fluence = fluence,
+                   output = output,
+                   output_unit = output_unit
+                 ),
+                 "P2" = list(
+                   product_form = product_form,
+                   SV_flu = SV_flu,
+                   SV_tts = SV_tts,
+                   fluence = fluence,
+                   output = output,
+                   output_unit = output_unit,
+                   SV_tts_unit = SV_tts_unit
+                 ),
+                 stop("Unknown position: ", position)
+  )
 
-  # Dispatch
-  result <- switch(position,
-                   P1 = do.call(RG199R2_P1, args),
-                   P2 = do.call(RG199R2_P2, args),
-                   stop("Unknown position: ", position))
+  result <- do.call(
+    switch(position,
+           "P1" = RG199R2_P1,
+           "P2" = RG199R2_P2),
+    args
+  )
 
   return(result)
 }
@@ -523,8 +550,9 @@ rg199_p2_margin <- function(product_form, SV_flu, SV_tts, fluence) {
 # 4. Common Functions ----
 # These are internal-use functions common to Position 1.1 and 1.2 implementations.
 
-# Fluence Factor (FF)
-# Computes Fluence Factor from fluence in n/cm² (numeric vector)
+#' Fluence Factor (FF)
+#' Computes Fluence Factor from fluence in n/cm² (numeric vector)
+#' @export
 rg199_ff <- function(fluence) {
   stopifnot(is.numeric(fluence), all(fluence >= 0))
   f <- fluence / 1e19
@@ -534,6 +562,17 @@ rg199_ff <- function(fluence) {
 
 # TTS from CF and fluence
 # Generalized computation: TTS = CF × FF
+#' @export
 rg199_tts <- function(cf, fluence) {
   cf * rg199_ff(fluence)
+}
+
+
+#' Marging from CF and fluence, SD
+#' Generalized computation: TTS = CF × FF
+#' @export
+rg199_margin <- function(cf, fluence, sd) {
+  tts <- rg199_tts(cf, fluence) # Calculate TTS
+  margin <- 2 * sd # Margin is 2 * SD
+  ifelse(margin > tts, tts, margin) # The smaller of TTS or Margin
 }

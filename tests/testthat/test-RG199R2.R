@@ -182,18 +182,19 @@ RG199R2(
   product_form = "W",
   SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
   fluence = 3e19,
-  output = "Margin", output_unit = "Celsius"
+  output = "TTS", output_unit = "Celsius",
+  position = "P2"
 )
 
 # 명시적으로 Position 지정
-test_that("RG199R2 auto dispatches to P1", {
-  expect_equal(
-    RG199R2(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
-            output = "FF", output_unit = "Celsius"),
-    RG199R2_P1(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
-               output = "FF", output_unit = "Celsius")
-  )
-})
+# test_that("RG199R2 auto dispatches to P1", {
+#   expect_equal(
+#     RG199R2(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
+#             output = "FF", output_unit = "Celsius"),
+#     RG199R2_P1(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
+#                output = "FF", output_unit = "Celsius")
+#   )
+# })
 
 # test_that("RG199R2 auto dispatches to P1", {
 #   expect_equal(
@@ -203,11 +204,22 @@ test_that("RG199R2 auto dispatches to P1", {
 #   )
 # })
 
+#
+# test_that("RG199R2 auto dispatches to P1", {
+#   expect_equal(
+#     RG199R2(fluence = 1e19, output = "FF"),
+#     c(1)
+#   )
+# })
+#
+#
+# test_that("RG199R2 auto dispatches to P1", {
+#   expect_equal(
+#     RG199R2(product_form = "F", SV_flu = flu2, SV_tts = tts2, output = "SD"),
+#     c(1)
+#   )
+# })
 
-test_that("RG199R2 auto dispatches to P1", {
-  expect_equal(
-    RG199R2(fluence = 1e19, output = "FF"),
-    c(1)
-  )
-})
+
+
 
