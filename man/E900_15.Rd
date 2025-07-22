@@ -14,7 +14,8 @@ E900_15(
   fluence,
   output = c("TTS", "TTS1", "TTS2", "SD"),
   output_unit = c("Celsius", "Fahrenheit"),
-  temperature_unit = c("Celsius", "Fahrenheit")
+  temperature_unit = c("Celsius", "Fahrenheit"),
+  use_names = FALSE
 )
 }
 \arguments{
@@ -56,10 +57,11 @@ E900_15(
 \item \code{"Celsius"} – Input temperature is in degrees Celsius (default)
 \item \code{"Fahrenheit"} – Input temperature is in degrees Fahrenheit
 }}
+
+\item{use_names}{Logical. If \code{TRUE}, result vector retains names (if any). Default is \code{FALSE}.}
 }
 \value{
-A numeric vector representing the result of the selected output option, expressed in the unit
-specified by \code{output_unit}.
+A numeric vector of TTS, TTS1, TTS2, or SD in degrees Celsius or Fahrenheit, depending on the specified \code{output_unit}.
 }
 \description{
 Computes the Transition Temperature Shift (TTS) components (TTS1, TTS2) or Standard Deviation (SD)
@@ -90,5 +92,5 @@ E900_15("W", 0.25, 0.3, 1.5, 0.015, 275, 5e18,
 
 }
 \seealso{
-\code{\link{E900_15_flux}} for flux-dependent modeling
+\code{\link{E900_15_flux}} for flux-dependent modeling,
 }
