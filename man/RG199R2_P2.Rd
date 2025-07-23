@@ -10,15 +10,44 @@ RG199R2_P2(
   product_form = NULL,
   output = c("CF", "SD"),
   output_unit = c("Celsius", "Fahrenheit"),
-  SV_tts_unit = c("Celsius", "Fahrenheit")
+  SV_tts_unit = c("Celsius", "Fahrenheit"),
+  use_names = FALSE
 )
+}
+\arguments{
+\item{SV_flu}{Numeric vector. Surveillance fluence values (n/cm^2).}
+
+\item{SV_tts}{Numeric vector. Surveillance transition temperature shifts (TTS).}
+
+\item{product_form}{Character vector of length 1 ("B", "F", "P", or "W") required for SD calculation.}
+
+\item{output}{Character. One of "CF" or "SD". Determines which property is returned.}
+
+\item{output_unit}{Character. Desired output unit, either "Celsius" or "Fahrenheit". Default is "Celsius".}
+
+\item{SV_tts_unit}{Character. Input unit of SV_tts, either "Celsius" or "Fahrenheit". Default is "Celsius".}
+
+\item{use_names}{Logical. Whether to retain input names in the output. Default is FALSE.}
+}
+\value{
+A single numeric value representing the computed Chemistry Factor (CF) or Standard Deviation (SD).
+The unit corresponds to the selected output_unit.
 }
 \description{
 Computes embrittlement-related properties using surveillance test data based on the interpretation
-of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1.
+of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1. This approach uses fluence and
+measured transition temperature shift (TTS) data to compute a best-estimate Chemistry Factor (CF)
+or an appropriate Standard Deviation (SD).
 }
 \details{
-The function estimates key embrittlement parameters such as Transition Temperature Shift (TTS),
-Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Regulatory Margin using
-surveillance capsule data from reactor pressure vessel materials.
+For "CF" output, at least two nonzero SV_flu values must be provided. All zero-fluence data must have zero TTS.
+For "SD" output, the product_form must be a single consistent value across the data (either "B" for base metal or "W" for weld).
+The SD is returned as either the full SD value or half, depending on the scatter of the data.
+}
+\examples{
+RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(30, 45), product_form = "B", output = "SD")
+
+}
+\seealso{
+\code{\link{RG199R2}}, \code{\link{RG199R2_P1}}
 }

@@ -13,8 +13,46 @@ RG199R2_P1(
   use_names = FALSE
 )
 }
+\arguments{
+\item{product_form}{Character vector. One of \code{"B"} (base), \code{"F"} (forging),
+\code{"P"} (plate), or \code{"W"} (weld). \code{"F"} and \code{"P"} are internally
+treated as \code{"B"}.}
+
+\item{Cu}{Optional numeric vector. Copper content in weight percent (wt\%).
+Required for \code{output = "CF"}.}
+
+\item{Ni}{Optional numeric vector. Nickel content in weight percent (wt\%).
+Required for \code{output = "CF"}.}
+
+\item{output}{Character. Type of property to compute. One of:
+\itemize{
+\item \code{"CF"} – Chemistry Factor (°C by default)
+\item \code{"SD"} – Standard Deviation (°C by default)
+}}
+
+\item{output_unit}{Character. Desired output unit. Either \code{"Celsius"} or \code{"Fahrenheit"}.
+Default is \code{"Celsius"}.}
+
+\item{use_names}{Logical. Whether to preserve input names in the output vector.
+Default is \code{FALSE}.}
+}
+\value{
+A numeric vector of computed values for the selected \code{output}. Unit depends on \code{output_unit}.
+}
 \description{
-Computes radiation embrittlement-related properties based on the U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988),
-specifically Position 1.1. This model uses tabulated Chemistry Factors and fixed Standard Deviations
-based on material composition and neutron fluence.
+Computes radiation embrittlement-related properties based on the U.S. NRC
+Regulatory Guide 1.99 Rev. 2 (1988), specifically Position 1.1. This model
+uses tabulated Chemistry Factors (CF) derived from copper and nickel content
+and fixed Standard Deviations (SD) based on product form.
+}
+\examples{
+# Calculate Chemistry Factor in Fahrenheit
+RG199R2_P1(product_form = "B", Cu = 0.2, Ni = 0.8, output = "CF", output_unit = "Fahrenheit")
+
+# Get standard deviation for weld material
+RG199R2_P1(product_form = "W", output = "SD")
+
+}
+\seealso{
+\code{\link{RG199R2}}, \code{\link{RG199R2_P2}}
 }

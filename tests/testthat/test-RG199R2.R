@@ -1,4 +1,3 @@
-
 # Input Data for Testing
 flu1 <- c(0.54, 1.12, 1.23, 2.94, 3.89, 5.52) * 1e19
 tts1 <- c(-9.27, -11.05, 3.12, 12.80, 24.03, 37.56)
@@ -9,252 +8,129 @@ tts2 <- c(50, 142, 200)
 flu3 <- c(0, 1e18, 1e19, 1e20)
 tts3 <- c(0, 100, 200, 250)
 
-# -------------------------------
-# RG199R2 Tests
-# -------------------------------
-test_that("", {
+test_that("RG199R2 default call returns value", {
   test1 <- RG199R2(20, 1e19)
   expect_equal(round(test1, 2), c(20))
 })
 
-test_that("", {
+test_that("RG199R2 converts Celsius input to Fahrenheit output", {
   test1 <- RG199R2(20, 1e19, output_unit = "F", input_unit = "C")
   expect_equal(round(test1, 2), c(36))
 })
 
-test_that("", {
-  test1 <- RG199R2(,1e19, output = "FF")
+test_that("RG199R2 returns FF output as 1", {
+  test1 <- RG199R2(NULL, 1e19, output = "FF")
   expect_equal(round(test1, 2), c(1))
 })
 
-test_that("", {
+test_that("RG199R2 returns expected margin value", {
   test1 <- RG199R2(20, 1e19, 8, output = "Margin")
   expect_equal(round(test1, 2), c(16))
 })
 
-
-
-# -------------------------------
-# RG199R2_P1 Tests
-# -------------------------------
-
-
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P1 computes Chemistry Factor for B and W", {
   test1 <- RG199R2_P1(c("B", "W"), 0.1, 0.4, output_unit = "F")
   expect_equal(round(test1, 2), c(65, 97))
 })
 
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P1 returns SD for all product forms", {
   test1 <- RG199R2_P1(c("B", "F", "P", "W"), output = "SD", output_unit = "F")
   expect_equal(round(test1, 2), c(17, 17, 17, 28))
 })
 
-
-
-test_that("P1: Error on invalid product_form", {
+test_that("RG199R2_P1 throws error on invalid product_form", {
   expect_error(
     RG199R2_P1("X", 0.2, 0.2),
     regexp = "Invalid"
   )
 })
 
-
-# -------------------------------
-# RG199R2_P2 Tests
-# -------------------------------
-
-
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P2 computes CF from SV data", {
   test1 <- RG199R2_P2(flu2, tts2)
   expect_equal(round(test1, 2), c(134.37))
 })
 
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P2 returns SD for base metal in Celsius", {
   test1 <- RG199R2_P2(flu2, tts2, "B", output = "SD")
   expect_equal(round(test1, 2), c(4.72))
 })
 
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P2 returns SD for base metal in Fahrenheit", {
   test1 <- RG199R2_P2(flu2, tts2, "B", output = "SD", output_unit = "F")
   expect_equal(round(test1, 2), c(8.5))
 })
 
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P2 returns SD for weld metal in Celsius", {
   test1 <- RG199R2_P2(flu2, tts2, "W", output = "SD")
   expect_equal(round(test1, 2), c(7.78))
 })
 
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P2 returns SD for weld metal in Fahrenheit", {
   test1 <- RG199R2_P2(flu2, tts2, "W", output = "SD", output_unit = "F")
   expect_equal(round(test1, 2), c(14))
 })
 
-test_that("P2: TTS interpolation", {
+test_that("RG199R2_P2 returns max SD when data scatter is large", {
   test1 <- RG199R2_P2(flu1, tts1, "W", output = "SD", output_unit = "F")
   expect_equal(round(test1, 2), c(28))
 })
 
-test_that("P1: Error on invalid product_form", {
+test_that("RG199R2_P2 throws error when product_form is not unique for SD", {
   expect_error(
-    RG199R2_P2(flu2, tts2, c("B", "W")),
+    RG199R2_P2(flu2, tts2, c("B", "W"), output = "SD"),
     regexp = "product_unique"
   )
 })
 
+test_that("RG199R2_P2 warns on unnecessary product_form for CF", {
+  expect_warning(
+    RG199R2_P2(flu2, tts2, c("B", "W")),
+    regexp = "ignored"
+  )
+})
 
+test_that("RG199R2_P1 interpolates TTS over fluence", {
+  test1 <- RG199R2(RG199R2_P1("B", 0.1, 0.5), flu1)
+  expect_equal(round(test1, 2), c(29.89, 37.25, 38.19, 46.43, 48.76, 51.33))
+})
 
+test_that("RG199R2_P2 estimates CF from surveillance data", {
+  test1 <- RG199R2_P2(flu1, tts1, output = "CF")
+  expect_equal(round(test1, 2), 10.34)
+})
 
+test_that("RG199R2_P2 default fluence uses SV fluence", {
+  test1 <- RG199R2_P2(flu3, tts3)
+  expect_equal(round(test1, 2), 178.97)
+})
 
-# -------------------------------
-# RG199R2_P2 Tests
-# -------------------------------
-#
+test_that("RG199R2_P2 calculates margin using full pipeline", {
+  test1 <- RG199R2(
+    cf = RG199R2_P2(flu2, tts2),
+    fluence = c(1e17, 1e18, 1e19, 1e20),
+    sd = RG199R2_P2(flu2, tts2, "W", output = "SD"),
+    output = "Margin")
+  expect_equal(round(test1, 2), c(14.73, 15.56, 15.56, 15.56))
+})
 
+test_that("RG199R2_P2 returns CF in both Celsius and Fahrenheit", {
+  test_c <- RG199R2_P2(flu2, tts2, output_unit = "C")
+  test_f <- RG199R2_P2(flu2, tts2, output_unit = "F")
+  expect_equal(round(test_c, 2), round(dF_to_dC(test_f), 2))
+})
 
-#
-# test_that("P2: TTS interpolation", {
-#   test1 <- RG199R2_P1("B", flu1, tts1, c(1e17, 1e18, 1e19, 1e20))
-#   expect_equal(round(test1, 2), c(1.13, 4.31, 10.34, 15.65))
-# })
-#
-# test_that("P2: CF estimation", {
-#   test1 <- rg199r2_p2("B", flu1, tts1, output = "CF")
-#   expect_equal(round(test1, 2), 10.34)
-# })
-#
-# test_that("P2: FF computation", {
-#   test1 <- rg199r2_p2(fluence = c(1e19, 2e19), output = "FF")
-#   expect_equal(round(test1, 2), c(1, 1.19))
-# })
-#
-# test_that("P2: SD for base", {
-#   test1 <- rg199r2_p2("B", flu2, tts2, output = "SD")
-#   expect_equal(round(test1, 2), 8.5)
-# })
-#
-# test_that("P2: SD for weld", {
-#   test1 <- rg199r2_p2("W", flu2, tts2, output = "SD")
-#   expect_equal(round(test1, 2), 14.0)
-# })
-#
-# test_that("P2: Margin for weld", {
-#   test1 <- rg199r2_p2("W", flu2, tts2, c(1e17, 1e18, 1e19, 1e20), output = "Margin")
-#   expect_equal(round(test1, 2), c(14.73, 28, 28, 28))
-# })
-#
-# test_that("P2: Only SV input, default fluence = SV flu", {
-#   test1 <- rg199r2_p2(SV_flu = flu3, SV_tts = tts3)
-#   expect_equal(round(test1, 2), c(0.00, 74.61, 178.97, 270.89))
-# })
-#
-# test_that("P2: TTS from SV and fluence input", {
-#   test1 <- rg199r2_p2("B", flu3, tts3, c(0, 1e19, 1e20, 1e21))
-#   expect_equal(round(test1, 2), c(0.0, 178.97, 270.89, 258.69))
-# })
-#
-# test_that("P2: CF returned with SV + fluence input", {
-#   test1 <- rg199r2_p2("B", flu3, tts3, c(1e19), output = "CF")
-#   expect_equal(round(test1, 2), 178.97)
-# })
-#
-# test_that("P2: CF with only SV input", {
-#   test1 <- rg199r2_p2(SV_flu = flu3, SV_tts = tts3, output = "CF")
-#   expect_equal(round(test1, 2), 178.97)
-# })
-#
-# test_that("P2: CF with fluence + SV input", {
-#   test1 <- rg199r2_p2(fluence = c(0, 1e19, 1e20, 1e21), SV_flu = flu3, SV_tts = tts3, output = "CF")
-#   expect_equal(round(test1, 2), 178.97)
-# })
-#
-# test_that("P1: CF for fixed Cu/Ni and multiple product forms", {
-#   test1 <- rg199r2_p1(c("B", "W"), 0.1, 0.6, c(1e19), output = "CF")
-#   expect_equal(round(test1, 2), c(65.00, 122.00))
-# })
-#
-# test_that("P1: SD constant over fluence range", {
-#   test1 <- rg199r2_p1("B", fluence = 1:5 * 1e19, output = "SD")
-#   expect_equal(round(test1, 2), rep(17, 5))
-# })
-#
-# test_that("P2: SD for multiple weld inputs", {
-#   test1 <- rg199r2_p2(rep("W", 5), output = "SD", SV_flu = flu2, SV_tts = tts2)
-#   expect_equal(round(test1, 2), rep(14, 5))
-# })
-#
-# test_that("P2: Margin for multiple weld inputs", {
-#   test1 <- rg199r2_p2(rep("W", 5), fluence = 10^(17:21), output = "Margin", SV_flu = flu2, SV_tts = tts2)
-#   expect_equal(round(test1, 2), c(14.73, 28.00, 28.00, 28.00, 28.00))
-# })
-#
-#
-# test_that("P2: CF in Celcius", {
-#   test1 <- rg199r2_p2(SV_flu = flu2, SV_tts = tts2, output = "CF")
-#   expect_equal(round(test1, 2), 134.37)
-# })
-#
-# test_that("P2: CF in Fahrenheit", {
-#   test1 <- RG199R2_P2(SV_flu = flu2, SV_tts = tts2, output = "CF")
-#   expect_equal(round(test1, 2), 134.37)
-# })
-#
-# test_that("P2: Margin for multiple weld inputs", {
-#   test1 <- rg199r2_p2(rep("W", 5), fluence = 10^(17:22), output = "TTS", SV_flu = flu2, SV_tts = tts2)
-#   expect_equal(round(test1, 2), c(14.73, 56.02, 134.37, 203.38, 194.23, 117.03))
-# })
-#
+test_that("RG199R2_P1 SD is constant across fluence", {
+  test1 <- RG199R2_P1("B", output = "SD", output_unit = "F")
+  expect_equal(round(test1, 2), rep(17))
+})
 
-
-#
-# # Auto dispatch → P1 사용
-# RG199R2(
-#   product_form = "B", Cu = 0.3, Ni = 1.0, fluence = 1e19,
-#   output = "TTS", output_unit = "Celsius"
-# )
-#
-# # Auto dispatch → P2 사용
-# RG199R2(
-#   product_form = "W",
-#   SV_flu = c(1e19, 2e19), SV_tts = c(100, 130),
-#   fluence = 3e19,
-#   output = "TTS", output_unit = "Celsius",
-#   position = "P2"
-# )
-
-# 명시적으로 Position 지정
-# test_that("RG199R2 auto dispatches to P1", {
-#   expect_equal(
-#     RG199R2(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
-#             output = "FF", output_unit = "Celsius"),
-#     RG199R2_P1(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
-#                output = "FF", output_unit = "Celsius")
-#   )
-# })
-
-# test_that("RG199R2 auto dispatches to P1", {
-#   expect_equal(
-#     RG199R2(product_form = "B", Cu = 0.2, Ni = 0.9, fluence = 1e19,
-#             output = "CF", output_unit = "Celsius"),
-#     RG199R2_P2(SV_flu = flu2, SV_tts = tts2, output = "CF")
-#   )
-# })
-
-#
-# test_that("RG199R2 auto dispatches to P1", {
-#   expect_equal(
-#     RG199R2(fluence = 1e19, output = "FF"),
-#     c(1)
-#   )
-# })
-#
-#
-# test_that("RG199R2 auto dispatches to P1", {
-#   expect_equal(
-#     RG199R2(product_form = "F", SV_flu = flu2, SV_tts = tts2, output = "SD"),
-#     c(1)
-#   )
-# })
-
-
-
+test_that("RG199R2 margin computation for multiple fluences", {
+  test1 <- RG199R2(
+    cf = RG199R2_P2(flu2, tts2),
+    fluence = 10^(17:21),
+    sd = RG199R2_P2(flu2, tts2, "W", output = "SD"),
+    output = "Margin"
+  )
+  expect_equal(round(test1, 2), c(14.73, 15.56, 15.56, 15.56, 15.56))
+})
 

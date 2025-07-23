@@ -55,5 +55,5 @@ RG199R2(cf = 80, fluence = 2e19, sd = 17,
 
 }
 \seealso{
-\code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}}
+\code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
 }

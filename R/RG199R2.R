@@ -31,7 +31,7 @@
 #' RG199R2(cf = 80, fluence = 2e19, sd = 17,
 #'         input_unit = "Fahrenheit", output = "Margin")
 #'
-#' @seealso \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}}
+#' @seealso \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
 #' @export
 RG199R2 <- function(cf = NULL, # for TTS, Margin
                     fluence = NULL, # for TTS, FF, TTS, Margin n/cm2
@@ -101,11 +101,13 @@ rg199_tts <- function(cf, fluence) {
   cf * rg199_ff(fluence)
 }
 
+
 # Computes Fluence Factor from fluence in n/cm² (numeric vector)
 rg199_ff <- function(fluence) {
   f <- fluence / 1e19
   f^(0.28 - 0.1 * log10(f))
 }
+
 
 # Marging from CF and fluence, SD
 rg199_margin <- function(cf, fluence, sd) {
@@ -119,67 +121,94 @@ rg199_margin <- function(cf, fluence, sd) {
 
 #' Regulatory Guide 1.99 Rev. 2 Position 1.1 Table-based Embrittlement Property Calculator
 #'
-#' Computes radiation embrittlement-related properties based on the U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988),
-#' specifically Position 1.1. This model uses tabulated Chemistry Factors and fixed Standard Deviations
-#' based on material composition and neutron fluence.
+#' Computes radiation embrittlement-related properties based on the U.S. NRC
+#' Regulatory Guide 1.99 Rev. 2 (1988), specifically Position 1.1. This model
+#' uses tabulated Chemistry Factors (CF) derived from copper and nickel content
+#' and fixed Standard Deviations (SD) based on product form.
 #'
+#' @param product_form Character vector. One of \code{"B"} (base), \code{"F"} (forging),
+#'   \code{"P"} (plate), or \code{"W"} (weld). \code{"F"} and \code{"P"} are internally
+#'   treated as \code{"B"}.
+#' @param Cu Optional numeric vector. Copper content in weight percent (wt%).
+#'   Required for \code{output = "CF"}.
+#' @param Ni Optional numeric vector. Nickel content in weight percent (wt%).
+#'   Required for \code{output = "CF"}.
+#' @param output Character. Type of property to compute. One of:
+#'   \itemize{
+#'     \item \code{"CF"} – Chemistry Factor (°C by default)
+#'     \item \code{"SD"} – Standard Deviation (°C by default)
+#'   }
+#' @param output_unit Character. Desired output unit. Either \code{"Celsius"} or \code{"Fahrenheit"}.
+#'   Default is \code{"Celsius"}.
+#' @param use_names Logical. Whether to preserve input names in the output vector.
+#'   Default is \code{FALSE}.
+#'
+#' @return A numeric vector of computed values for the selected \code{output}. Unit depends on \code{output_unit}.
+#'
+#' @examples
+#' # Calculate Chemistry Factor in Fahrenheit
+#' RG199R2_P1(product_form = "B", Cu = 0.2, Ni = 0.8, output = "CF", output_unit = "Fahrenheit")
+#'
+#' # Get standard deviation for weld material
+#' RG199R2_P1(product_form = "W", output = "SD")
+#'
+#' @seealso \code{\link{RG199R2}}, \code{\link{RG199R2_P2}}
 #' @export
-RG199R2_P1 <- function(product_form, # B, F, P, W
-                       Cu = NULL, # wt%
-                       Ni = NULL, # wt%
+
+RG199R2_P1 <- function(product_form,
+                       Cu = NULL,
+                       Ni = NULL,
                        output = c("CF", "SD"),
                        output_unit = c("Celsius", "Fahrenheit"),
                        use_names = FALSE) {
-  # Input requirement checks
-  output <- match.arg(output, several.ok = FALSE)
-  output_unit <- match.arg(output_unit, several.ok = FALSE)
 
+  # Match and validate input arguments
+  output <- match.arg(output)
+  output_unit <- match.arg(output_unit)
+
+  # Compute selected output
   if (output == "CF") {
     if (is.null(product_form) || is.null(Cu) || is.null(Ni)) {
       stop("For CF calculation, please provide 'product_form', 'Cu', and 'Ni'.")
     }
-  }
-
-  if (!is.null(Cu)) {
     stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
-  }
-  if (!is.null(Ni)) {
     stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
+
+    expanded <- expand_vectors(product_form, Cu, Ni)
+    pf <- expanded[[1]]
+    cu <- expanded[[2]]
+    ni <- expanded[[3]]
+    result <- rg199_p1_cf_degF(pf, cu, ni)
+
+  } else if (output == "SD") {
+    result <- rg199_p1_sd_degF(product_form)
   }
 
-  # Expand vectors
-  expanded <- expand_vectors(product_form, Cu, Ni)
-  pf <- expanded[[1]]
-  cu <- expanded[[2]]
-  ni <- expanded[[3]]
-
-  # Output calculation
-  result <- switch(output, # degF
-    "CF" = rg199_p1_cf_degF(pf, cu, ni),
-    "SD" = rg199_p1_sd_degF(pf)
-  )
-
-  # Convert degF to degC if needed
+  # Apply unit conversion if needed
   if (output_unit == "Celsius") {
     result <- dF_to_dC(result)
   }
 
+  # Return result with or without names
   if (use_names) result else unname(result)
 }
 
 
 # P1.1 CF
 rg199_p1_cf_degF <- function(product_form, Cu, Ni) {
-  product_form <- to_baseweld(product_form) # B or W
-  is_base <- product_form == "B"
-  is_weld <- product_form == "W"
+  product_form <- to_baseweld(product_form)
+  n <- length(product_form)
+  cf <- numeric(n)
+  for (i in seq_len(n)) {
+    pf <- product_form[i]
+    cu <- Cu[i]
+    ni <- Ni[i]
 
-  cf <- numeric(length(product_form))
-  cf[is_base] <- mapply(rg199_p1_cf_base, Cu[is_base], Ni[is_base])
-  cf[is_weld] <- mapply(rg199_p1_cf_weld, Cu[is_weld], Ni[is_weld])
-
+    cf[i] <- if (pf == "B") rg199_p1_cf_base(cu, ni) else rg199_p1_cf_weld(cu, ni)
+  }
   cf
 }
+
 
 # P1.1 SD
 rg199_p1_sd_degF <- function(product_form) {
@@ -189,6 +218,7 @@ rg199_p1_sd_degF <- function(product_form) {
 }
 
 
+# P1.1 CF base table
 rg199_p1_cf_base <- function(Cu, Ni) { # not vectorized
   cf_base <- matrix(
     c(
@@ -225,6 +255,7 @@ rg199_p1_cf_base <- function(Cu, Ni) { # not vectorized
 }
 
 
+# P1.1 CF weld table
 rg199_p1_cf_weld <- function(Cu, Ni) { # not vectorized
   cf_weld <- matrix(
     c(
@@ -318,43 +349,66 @@ interp2d_linear <- function(x_values, y_values, table, x, y) {
 
 ## 3. RG1.99R2 P2.1 Calculations ----
 
-
 #' Regulatory Guide 1.99 Rev. 2 Position 2.1 Surveillance-Based Embrittlement Property Calculator
 #'
 #' Computes embrittlement-related properties using surveillance test data based on the interpretation
-#' of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1.
+#' of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1. This approach uses fluence and
+#' measured transition temperature shift (TTS) data to compute a best-estimate Chemistry Factor (CF)
+#' or an appropriate Standard Deviation (SD).
 #'
-#' The function estimates key embrittlement parameters such as Transition Temperature Shift (TTS),
-#' Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Regulatory Margin using
-#' surveillance capsule data from reactor pressure vessel materials.
+#' @param SV_flu Numeric vector. Surveillance fluence values (n/cm^2).
+#' @param SV_tts Numeric vector. Surveillance transition temperature shifts (TTS).
+#' @param product_form Character vector of length 1 ("B", "F", "P", or "W") required for SD calculation.
+#' @param output Character. One of "CF" or "SD". Determines which property is returned.
+#' @param output_unit Character. Desired output unit, either "Celsius" or "Fahrenheit". Default is "Celsius".
+#' @param SV_tts_unit Character. Input unit of SV_tts, either "Celsius" or "Fahrenheit". Default is "Celsius".
+#' @param use_names Logical. Whether to retain input names in the output. Default is FALSE.
 #'
-
+#' @return A single numeric value representing the computed Chemistry Factor (CF) or Standard Deviation (SD).
+#'         The unit corresponds to the selected output_unit.
+#'
+#' @details
+#' For "CF" output, at least two nonzero SV_flu values must be provided. All zero-fluence data must have zero TTS.
+#' For "SD" output, the product_form must be a single consistent value across the data (either "B" for base metal or "W" for weld).
+#' The SD is returned as either the full SD value or half, depending on the scatter of the data.
+#'
+#' @examples
+#' RG199R2_P2(SV_flu = c(1e19, 2e19), SV_tts = c(30, 45), product_form = "B", output = "SD")
+#'
+#' @seealso \code{\link{RG199R2}}, \code{\link{RG199R2_P1}}
+#'
 #' @export
-#'
-#'
-#'
-#' Return only single value
 RG199R2_P2 <- function(SV_flu, # A numeric vector of length 2 or more
                        SV_tts, # A numeric vector of length 2 or more
-                       product_form = NULL, # for SD, Margin
+                       product_form = NULL, # for SD
                        output = c("CF", "SD"),
                        output_unit = c("Celsius", "Fahrenheit"),
-                       SV_tts_unit = c("Celsius", "Fahrenheit")) {
-  # Input requirement checks
+                       SV_tts_unit = c("Celsius", "Fahrenheit"),
+                       use_names = FALSE) {
+
+  # Match and validate input arguments
   output <- match.arg(output, several.ok = FALSE)
   output_unit <- match.arg(output_unit, several.ok = FALSE)
   SV_tts_unit <- match.arg(SV_tts_unit, several.ok = FALSE)
 
+  # Check numeric validity
   stopifnot(is.numeric(SV_flu), is.numeric(SV_tts))
   stopifnot(length(SV_flu) == length(SV_tts))
   stopifnot(all(SV_tts[SV_flu == 0] == 0))
   stopifnot(sum(SV_flu > 0) >= 2)
 
+  if (output == "CF" && !is.null(product_form)) {
+    warning("'product_form' is ignored when output = 'CF'.")
+  }
+
   # Temperature convert
   SV_tts_degF <- if (SV_tts_unit == "Celsius") dC_to_dF(SV_tts) else SV_tts
 
   # check product_form uniqueness
-  if (!is.null(product_form)) {
+  if (output == "SD") {
+    if (is.null(product_form)) {
+      stop("For SD calculation, 'product_form' must be provided.")
+    }
     product_unique <- unique(product_form)
     stopifnot(length(product_unique) == 1)
   }
@@ -370,25 +424,26 @@ RG199R2_P2 <- function(SV_flu, # A numeric vector of length 2 or more
     result <- dF_to_dC(result)
   }
 
-  unname(result)
+  # Return result with or without names
+  if (use_names) result else unname(result)
 }
 
 
 # P2.1 CF
 rg199_p2_cf <- function(SV_flu, SV_tts) {
   ff <- rg199_ff(SV_flu)
-  sum(ff * SV_tts) / sum(ff^2) # Returns a single CF value
+  sum(ff * SV_tts) / sum(ff^2) # Return single value
 }
 
 
 # P2.1 SD
 rg199_p2_sd_degF <- function(SV_flu, SV_tts, product_unique) {
-  cf <- rg199_p2_cf(SV_flu, SV_tts) # Single CF value
+  cf <- rg199_p2_cf(SV_flu, SV_tts) # Single value
   best_tts <- cf * rg199_ff(SV_flu)
   scatter <- abs(SV_tts - best_tts)
   max_scatter <- max(scatter)
 
   sd <- c("B" = 17, "W" = 28)[product_unique]
   half_sd <- sd / 2 # 8.5 or 14
-  if (all(sd < max_scatter)) sd else half_sd
+  if (all(sd < max_scatter)) sd else half_sd # Return single value
 }

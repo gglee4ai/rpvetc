@@ -73,15 +73,18 @@ E900_15 <- function(product_form,
                     output_unit = c("Celsius", "Fahrenheit"),
                     temperature_unit = c("Celsius", "Fahrenheit"),
                     use_names = FALSE) {
-  # Input requirement checks
+  # Match and validate input arguments
   output <- match.arg(output, several.ok = FALSE)
   output_unit <- match.arg(output_unit, several.ok = FALSE)
   temperature_unit <- match.arg(temperature_unit, several.ok = FALSE)
 
-  form <- as.character(product_form)
-  if (any(!form %in% c("F", "P", "W"))) {
+  # Check product_form
+  product_form <- as.character(product_form) # for factor
+  if (any(!product_form %in% c("F", "P", "W"))) {
     stop("Invalid 'product_form'. Must be one of: 'F', 'P', or 'W'.")
   }
+
+  # Check numeric validity
   stopifnot(is.numeric(Cu), all(Cu >= 0 & Cu <= 100))
   stopifnot(is.numeric(Ni), all(Ni >= 0 & Ni <= 100))
   stopifnot(is.numeric(Mn), all(Mn >= 0 & Mn <= 100))
@@ -94,7 +97,7 @@ E900_15 <- function(product_form,
     temperature <- F_to_C(temperature)
   }
 
-  # Expand vectors
+  # Broadcast shorter vectors to match lengths
   expanded <- expand_vectors(product_form, Cu, Ni, Mn, P, temperature, fluence)
   pf <- expanded[[1]]
   cu <- expanded[[2]]
@@ -104,7 +107,7 @@ E900_15 <- function(product_form,
   tc <- expanded[[6]]
   fl <- expanded[[7]]
 
-  # Output calculation
+  # Compute selected output
   result <- switch(output,
     "TTS1" = e900_tts1(pf, ni, mn, ps, tc, fl),
     "TTS2" = e900_tts2(pf, cu, ni, ps, tc, fl),
@@ -120,6 +123,7 @@ E900_15 <- function(product_form,
     result <- dC_to_dF(result)
   }
 
+  # Return result with or without names
   if (use_names) result else unname(result)
 }
 
@@ -191,7 +195,7 @@ e900_ff2 <- function(fluence) {
   pmax(pmin(113.87 * (log(fluence) - log(4.5e16)), 612.6), 0) / 612.6 # 정규화된 값
 }
 
-## TTS by CF
+## TTS by CFs
 e900_tts_by_cf <- function(cf1, cf2, fluence) {
   out1 <- cf1 * e900_ff1(fluence)
   out2 <- cf2 * e900_ff2(fluence)
