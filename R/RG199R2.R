@@ -443,7 +443,7 @@ rg199_p2_sd_degF <- function(SV_flu, SV_tts, product_unique) {
   scatter <- abs(SV_tts - best_tts)
   max_scatter <- max(scatter)
 
-  product <- to_baseweld[product_unique]
+  product <- to_baseweld(product_unique)
   sd <- c("B" = 17, "W" = 28)[product]
   half_sd <- sd / 2 # 8.5 or 14
   if (all(sd < max_scatter)) sd else half_sd # Return single value
