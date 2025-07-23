@@ -409,7 +409,7 @@ RG199R2_P2 <- function(SV_flu, # A numeric vector of length 2 or more
     if (is.null(product_form)) {
       stop("For SD calculation, 'product_form' must be provided.")
     }
-    product_unique <- unique(to_basewelproduct_form)
+    product_unique <- unique(product_form)
     stopifnot(length(product_unique) == 1)
   }
 
@@ -444,7 +444,7 @@ rg199_p2_sd_degF <- function(SV_flu, SV_tts, product_unique) {
   max_scatter <- max(scatter)
 
   product <- to_baseweld[product_unique]
-  sd <- c("B" = 17, "W" = 28)[product_unique]
+  sd <- c("B" = 17, "W" = 28)[product]
   half_sd <- sd / 2 # 8.5 or 14
   if (all(sd < max_scatter)) sd else half_sd # Return single value
 }
