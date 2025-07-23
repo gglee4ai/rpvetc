@@ -5,62 +5,16 @@
 \title{Regulatory Guide 1.99 Rev. 2 Position 1.1 Table-based Embrittlement Property Calculator}
 \usage{
 RG199R2_P1(
-  product_form = NULL,
+  product_form,
   Cu = NULL,
   Ni = NULL,
-  fluence = NULL,
-  output = c("TTS", "CF", "FF", "SD", "Margin"),
-  output_unit = c("Celsius", "Fahrenheit")
+  output = c("CF", "SD"),
+  output_unit = c("Celsius", "Fahrenheit"),
+  use_names = FALSE
 )
-}
-\arguments{
-\item{product_form}{Character vector. One of \code{"B"}, \code{"F"}, \code{"P"}, or \code{"W"}.
-\code{"F"} (forgings) and \code{"P"} (plates) are treated as base metal (\code{"B"}).}
-
-\item{Cu}{Numeric vector. Copper content in weight percent (wt\%). Must be between 0 and 100.}
-
-\item{Ni}{Numeric vector. Nickel content in weight percent (wt\%). Must be between 0 and 100.}
-
-\item{fluence}{Numeric vector. Neutron fluence in n/cm².}
-
-\item{output}{Character. One of:
-\itemize{
-\item \code{"TTS"} – Transition Temperature Shift
-\item \code{"CF"} – Chemistry Factor
-\item \code{"FF"} – Fluence Factor
-\item \code{"SD"} – Standard Deviation
-\item \code{"Margin"} – Regulatory Margin
-}}
-
-\item{output_unit}{Character. Unit of the output result. One of:
-\itemize{
-\item \code{"Celsius"} – Return results in degrees Celsius (default)
-\item \code{"Fahrenheit"} – Return results in degrees Fahrenheit
-}}
-}
-\value{
-A numeric vector of computed values for the selected \code{output}. For TTS, CF, and SD,
-the unit depends on \code{output_unit}. FF is unitless.
 }
 \description{
 Computes radiation embrittlement-related properties based on the U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988),
 specifically Position 1.1. This model uses tabulated Chemistry Factors and fixed Standard Deviations
 based on material composition and neutron fluence.
-}
-\examples{
-# Compute Chemistry Factor in Fahrenheit
-RG199R2_P1(
-  product_form = "B", Cu = 0.25, Ni = 0.8, fluence = 1e19,
-  output = "CF", output_unit = "Fahrenheit"
-)
-
-# Compute TTS in Celsius
-RG199R2_P1(
-  product_form = "B", Cu = 0.20, Ni = 0.7, fluence = 5e19,
-  output = "TTS", output_unit = "Celsius"
-)
-
-}
-\seealso{
-\code{\link{RG199R2_P2}}, \code{\link{NP3319}}, \code{\link{CR3391}}
 }

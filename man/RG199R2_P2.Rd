@@ -5,63 +5,13 @@
 \title{Regulatory Guide 1.99 Rev. 2 Position 2.1 Surveillance-Based Embrittlement Property Calculator}
 \usage{
 RG199R2_P2(
+  SV_flu,
+  SV_tts,
   product_form = NULL,
-  SV_flu = NULL,
-  SV_tts = NULL,
-  fluence = NULL,
-  output = c("TTS", "CF", "FF", "SD", "Margin"),
+  output = c("CF", "SD"),
   output_unit = c("Celsius", "Fahrenheit"),
   SV_tts_unit = c("Celsius", "Fahrenheit")
 )
-}
-\arguments{
-\item{product_form}{Optional character vector indicating the product form of the material.
-Must be one of:
-\itemize{
-\item \code{"B"} – Base metal
-\item \code{"F"} – Forgings (treated as base metal)
-\item \code{"P"} – Plate (treated as base metal)
-\item \code{"W"} – Weld metal
-}
-Required when computing \code{"SD"} or \code{"Margin"}.}
-
-\item{SV_flu}{Numeric vector of surveillance neutron fluence values in n/cm². Must be the same length as \code{SV_tts}.}
-
-\item{SV_tts}{Numeric vector of measured transition temperature shift (TTS) values. Unit is specified by \code{SV_tts_unit}.}
-
-\item{fluence}{Optional numeric value or vector of neutron fluence in n/cm² at which to evaluate
-\code{"TTS"}, \code{"FF"}, or \code{"Margin"}. Not required for \code{"CF"} or \code{"SD"}.}
-
-\item{output}{Character string specifying which property to compute. Must be one of:
-\itemize{
-\item \code{"TTS"} – Estimated Transition Temperature Shift at the specified fluence
-\item \code{"CF"} – Back-calculated Chemistry Factor from surveillance data
-\item \code{"FF"} – Fluence Factor at the given fluence
-\item \code{"SD"} – Standard Deviation of the surveillance data fit
-\item \code{"Margin"} – Regulatory margin defined as \eqn{min(TTS, 2 × SD)}
-  }}
-
-\item{output_unit}{Character string specifying the output unit for TTS, CF, SD, and Margin.
-Must be one of:
-\itemize{
-\item \code{"Celsius"} – Results returned in degrees Celsius (default)
-\item \code{"Fahrenheit"} – Results returned in degrees Fahrenheit
-}}
-
-\item{SV_tts_unit}{Character string specifying the unit of the input \code{SV_tts}.
-Must be one of:
-\itemize{
-\item \code{"Celsius"}
-\item \code{"Fahrenheit"}
-}
-Defaults to \code{output_unit} if not explicitly specified.}
-}
-\value{
-A numeric value or vector corresponding to the specified \code{output}:
-\itemize{
-\item For \code{"TTS"}, \code{"CF"}, \code{"SD"}, and \code{"Margin"} – unit depends on \code{output_unit}
-\item For \code{"FF"} – unitless
-}
 }
 \description{
 Computes embrittlement-related properties using surveillance test data based on the interpretation
@@ -71,56 +21,4 @@ of U.S. NRC Regulatory Guide 1.99 Rev. 2 (1988), Position 2.1.
 The function estimates key embrittlement parameters such as Transition Temperature Shift (TTS),
 Chemistry Factor (CF), Fluence Factor (FF), Standard Deviation (SD), and Regulatory Margin using
 surveillance capsule data from reactor pressure vessel materials.
-\itemize{
-\item The Chemistry Factor (CF) is back-calculated by minimizing residuals between measured and predicted TTS.
-\item Standard Deviation (SD) is estimated by comparing the residual range against acceptance thresholds.
-\item TTS and FF are evaluated at the specified fluence using the back-calculated CF.
-}
-}
-\examples{
-# Example 1: Back-calculate CF using surveillance data
-RG199R2_P2(
-  product_form = "B",
-  SV_flu = c(1e19, 2e19),
-  SV_tts = c(100, 130),
-  output = "CF",
-  output_unit = "Celsius",
-  SV_tts_unit = "Celsius"
-)
-
-# Example 2: Estimate TTS at target fluence
-RG199R2_P2(
-  product_form = "P",
-  SV_flu = c(1e19, 2e19),
-  SV_tts = c(212, 239),
-  fluence = 3e19,
-  output = "TTS",
-  output_unit = "Fahrenheit",
-  SV_tts_unit = "Fahrenheit"
-)
-
-# Example 3: Compute SD for weld metal
-RG199R2_P2(
-  product_form = "W",
-  SV_flu = c(1e19, 2e19),
-  SV_tts = c(105, 137),
-  output = "SD",
-  output_unit = "Celsius",
-  SV_tts_unit = "Celsius"
-)
-
-# Example 4: Compute Regulatory Margin
-RG199R2_P2(
-  product_form = "P",
-  SV_flu = c(1e19, 2e19),
-  SV_tts = c(100, 130),
-  fluence = 4e19,
-  output = "Margin",
-  output_unit = "Celsius",
-  SV_tts_unit = "Celsius"
-)
-
-}
-\seealso{
-\code{\link{RG199R2_P1}}, \code{\link{NP3319}}, \code{\link{CR3391}}
 }

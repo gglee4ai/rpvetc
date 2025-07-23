@@ -2,37 +2,58 @@
 % Please edit documentation in R/RG199R2.R
 \name{RG199R2}
 \alias{RG199R2}
-\title{Unified Interface for Regulatory Guide 1.99 Rev. 2 (Position 1.1 and 2.1)}
+\title{General Embrittlement Property Calculator (Direct CF/Fluence/SD Input)}
 \usage{
 RG199R2(
-  product_form = NULL,
-  Cu = NULL,
-  Ni = NULL,
-  SV_flu = NULL,
-  SV_tts = NULL,
+  cf = NULL,
   fluence = NULL,
-  output = c("TTS", "CF", "FF", "SD", "Margin"),
+  sd = NULL,
+  output = c("TTS", "FF", "Margin"),
   output_unit = c("Celsius", "Fahrenheit"),
-  SV_tts_unit = c("Celsius", "Fahrenheit"),
-  position = c("auto", "P1", "P2")
+  input_unit = c("Celsius", "Fahrenheit"),
+  use_names = FALSE
 )
 }
 \arguments{
-\item{output}{One of \code{"TTS"}, \code{"CF"}, \code{"FF"}, \code{"SD"}, or \code{"Margin"}.}
+\item{cf}{Numeric vector. Chemistry Factor (in degrees). Required for \code{"TTS"} and \code{"Margin"}.}
 
-\item{output_unit}{One of \code{"Celsius"} (default) or \code{"Fahrenheit"}.}
+\item{fluence}{Numeric vector. Neutron fluence in n/cm². Required for all output types.}
 
-\item{position}{Character. One of \code{"auto"}, \code{"P1"}, or \code{"P2"}.
-If \code{"auto"} (default), dispatch is based on provided arguments:
-If \code{SV_flu} and \code{SV_tts} are provided, \code{P2} is used;
-otherwise, \code{P1}.}
+\item{sd}{Numeric vector. Standard deviation of the shift (in degrees). Required for \code{"Margin"}.}
 
-\item{...}{Additional arguments passed to either \code{RG199R2_P1} or \code{RG199R2_P2}.}
+\item{output}{Character string. One of \code{"TTS"}, \code{"FF"}, or \code{"Margin"}.}
+
+\item{output_unit}{Character. Unit of the returned result. Either \code{"Celsius"} (default) or \code{"Fahrenheit"}.}
+
+\item{input_unit}{Character. Unit of the input values (\code{cf} and \code{sd}). Either \code{"Celsius"} (default) or \code{"Fahrenheit"}.}
+
+\item{use_names}{Logical. If \code{TRUE}, preserves input names in the output. Default is \code{FALSE}.}
 }
 \value{
-A numeric result from either Position 1.1 or 2.1 model.
+A numeric vector of computed values. Units depend on \code{output_unit}. If \code{output = "FF"}, result is unitless.
 }
 \description{
-Computes embrittlement-related properties using either table-based (Position 1.1) or
-surveillance-based (Position 2.1) models from NRC RG 1.99 Rev. 2.
+Computes embrittlement-related properties—Transition Temperature Shift (TTS),
+Fluence Factor (FF), or Regulatory Margin—based on user-supplied Chemistry Factor (CF),
+fluence, and standard deviation (SD) values.
+}
+\details{
+This function does not rely on Position 1.1 or 2.1 models. It is intended for use
+when CF, SD, and fluence are externally obtained or precomputed.
+}
+\examples{
+# Compute TTS in Celsius
+RG199R2(cf = 100, fluence = 3e19, output = "TTS",
+        input_unit = "Fahrenheit", output_unit = "Celsius")
+
+# Compute Fluence Factor
+RG199R2(fluence = 5e19, output = "FF")
+
+# Compute Regulatory Margin
+RG199R2(cf = 80, fluence = 2e19, sd = 17,
+        input_unit = "Fahrenheit", output = "Margin")
+
+}
+\seealso{
+\code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}}
 }
