@@ -103,5 +103,5 @@ E900_15_flux("W",
 
 }
 \seealso{
-\code{\link{E900_15}} for the base model without flux correction
+\code{\link{ASTM_E900_15}} for the base model without flux correction
 }

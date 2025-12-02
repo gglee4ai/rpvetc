@@ -77,5 +77,5 @@ NP3319(
 
 }
 \seealso{
-\code{\link{CR3391}}, \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
+\code{\link{CR3391}}, \code{\link{RG199R2_TTS}}
 }

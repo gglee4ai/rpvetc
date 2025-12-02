@@ -107,12 +107,12 @@ ASTM_E900_15 <- function(product_form, # F, P, W
 
   # Compute selected output
   result <- switch(output,
-    "TTS1" = astm_e90015_tts1(pf, ni, mn, ps, tc, fl),
-    "TTS2" = astm_e90015_tts2(pf, cu, ni, ps, tc, fl),
-    "TTS" = astm_e90015_tts(pf, cu, ni, mn, ps, tc, fl),
+    "TTS1" = astm_e900_15_tts1(pf, ni, mn, ps, tc, fl),
+    "TTS2" = astm_e900_15_tts2(pf, cu, ni, ps, tc, fl),
+    "TTS" = astm_e900_15_tts(pf, cu, ni, mn, ps, tc, fl),
     "SD" = {
-      tts <- astm_e90015_tts(pf, cu, ni, mn, ps, tc, fl)
-      astm_e90015_sd(pf, tts)
+      tts <- astm_e900_15_tts(pf, cu, ni, mn, ps, tc, fl)
+      astm_e900_15_sd(pf, tts)
     }
   )
 
@@ -126,9 +126,9 @@ ASTM_E900_15 <- function(product_form, # F, P, W
 }
 
 # TTS1
-astm_e90015_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
+astm_e900_15_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
   A <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
-  out <- A * 1.8943e-12 * (fluence^0.5695)
+  out <- A * 1.8943e-12 * (fluence^0.5695) # fluence n/m2
   out <- out * (((1.8 * temperature + 32) / 550)^(-5.47))
   out <- out * ((0.09 + P / 0.012)^0.216)
   out <- out * ((1.66 + (Ni^8.54) / 0.63)^0.39)
@@ -137,9 +137,9 @@ astm_e90015_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
 }
 
 # TTS2
-astm_e90015_tts2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
+astm_e900_15_tts2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
   B <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
-  M <- B * pmax(pmin(113.87 * (log(fluence) - log(4.5e20)), 612.6), 0)
+  M <- B * pmax(pmin(113.87 * (log(fluence) - log(4.5e20)), 612.6), 0) # fluence n/m2
   M <- M * (((1.8 * temperature + 32) / 550)^(-5.45))
   M <- M * ((0.1 + P / 0.012)^(-0.098))
   M <- M * ((0.168 + (Ni^0.58) / 0.63)^0.73)
@@ -148,54 +148,15 @@ astm_e90015_tts2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
 }
 
 # TTS = TTS1 + TTS2
-astm_e90015_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
-  tts1 <- astm_e90015_tts1(product_form, Ni, Mn, P, temperature, fluence)
-  tts2 <- astm_e90015_tts2(product_form, Cu, Ni, P, temperature, fluence)
+astm_e900_15_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
+  tts1 <- astm_e900_15_tts1(product_form, Ni, Mn, P, temperature, fluence)
+  tts2 <- astm_e900_15_tts2(product_form, Cu, Ni, P, temperature, fluence)
   tts1 + tts2
 }
 
 # SD
-astm_e90015_sd <- function(product_form, tts) {
+astm_e900_15_sd <- function(product_form, tts) {
   C <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
   D <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
   C * (tts^D)
 }
-
-# # CF1
-# e900_cf1 <- function(product_form, Ni, Mn, P, temperature) {
-#   A <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
-#   out <- A * (1.8943e-12 * (1e23^0.5695)) # * 3.593e-10 * (1e19^0.5695) 값으로 정규화
-#   out <- out * (((1.8 * temperature + 32) / 550)^(-5.47))
-#   out <- out * ((0.09 + P / 0.012)^0.216)
-#   out <- out * ((1.66 + (Ni^8.54) / 0.63)^0.39)
-#   out <- out * ((Mn / 1.36)^0.3)
-#   out * (5 / 9)
-# }
-#
-# # CF2
-# e900_cf2 <- function(product_form, Cu, Ni, P, temperature) {
-#   B <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
-#   M <- B * 612.6 # 612.6으로 정규화
-#   M <- M * (((1.8 * temperature + 32) / 550)^(-5.45))
-#   M <- M * ((0.1 + P / 0.012)^(-0.098))
-#   M <- M * ((0.168 + (Ni^0.58) / 0.63)^0.73)
-#   out <- pmax(pmin(Cu, 0.28) - 0.053, 0) * M
-#   out * (5 / 9)
-# }
-#
-# # FF1
-# e900_ff1 <- function(fluence) {
-#   (3.593e-10 * (fluence^0.5695)) / (3.593e-10 * (1e19^0.5695)) # 정규화된 값
-# }
-#
-# ## FF2
-# e900_ff2 <- function(fluence) {
-#   pmax(pmin(113.87 * (log(fluence) - log(4.5e16)), 612.6), 0) / 612.6 # 정규화된 값
-# }
-#
-# ## TTS by CFs
-# e900_tts_by_cf <- function(cf1, cf2, fluence) {
-#   out1 <- cf1 * e900_ff1(fluence)
-#   out2 <- cf2 * e900_ff2(fluence)
-#   out1 + out2
-# }

@@ -70,7 +70,7 @@
 #'   output = "SD", output_unit = "Celsius"
 #' )
 #'
-#' @seealso \code{\link{E900_15}} for the base model without flux correction
+#' @seealso \code{\link{ASTM_E900_15}} for the base model without flux correction
 #' @export
 E900_15_flux <- function(product_form,
                          Cu,

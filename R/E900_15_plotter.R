@@ -3,9 +3,7 @@
 #' Computes either the Transition Temperature Shift (TTS) components (TTS1, TTS2) or
 #' the Standard Deviation (SD), based on the PLOTTER VBA module developed by Mark Kirk.
 #'
-#' This function calculates radiation-induced embrittlement in reactor pressure vessel (RPV) materials
-#' using neutron fluence and chemical composition. It provides estimates for two components of TTS (TTS1 and TTS2),
-#' their sum (TTS), and the associated standard deviation (SD).
+#' This function is deprecated. Use `ASTM_E900_15()` instead.
 #'
 #' @param product_form Character vector, specifying the product form. Must be one of:
 #'   \itemize{
@@ -47,22 +45,22 @@
 #'
 #' @examples
 #' # Compute total TTS in Celsius
-#' E900_15("P", 0.2, 0.18, 1.36, 0.012, 290, 2.5e18, output = "TTS")
+#' E900_15_plotter("P", 0.2, 0.18, 1.36, 0.012, 290, 2.5e18, output = "TTS")
 #'
 #' # Compute TTS1 in Fahrenheit with input temperature also in Fahrenheit
-#' E900_15("F", 0.15, 0.2, 1.4, 0.01, 570, 1e19,
+#' E900_15_plotter("F", 0.15, 0.2, 1.4, 0.01, 570, 1e19,
 #'   output = "TTS1", output_unit = "Fahrenheit", temperature_unit = "Fahrenheit"
 #' )
 #'
 #' # Compute SD in Celsius (default temperature input assumed in Celsius)
-#' E900_15("W", 0.25, 0.3, 1.5, 0.015, 275, 5e18,
+#' E900_15_plotter("W", 0.25, 0.3, 1.5, 0.015, 275, 5e18,
 #'   output = "SD", output_unit = "Celsius"
 #' )
 #'
 #' @seealso
-#'   \code{\link{E900_15_flux}} for flux-dependent modeling,
+#'   \code{\link{E900_15_flux}} for flux-dependent modeling
 #' @export
-E900_15 <- function(product_form,
+E900_15_plotter <- function(product_form,
                     Cu,
                     Ni,
                     Mn,
@@ -73,6 +71,7 @@ E900_15 <- function(product_form,
                     output_unit = c("Celsius", "Fahrenheit"),
                     temperature_unit = c("Celsius", "Fahrenheit"),
                     use_names = FALSE) {
+
   # Match and validate input arguments
   output <- match.arg(output, several.ok = FALSE)
   output_unit <- match.arg(output_unit, several.ok = FALSE)
@@ -109,12 +108,12 @@ E900_15 <- function(product_form,
 
   # Compute selected output
   result <- switch(output,
-    "TTS1" = e900_tts1(pf, ni, mn, ps, tc, fl),
-    "TTS2" = e900_tts2(pf, cu, ni, ps, tc, fl),
-    "TTS" = e900_tts(pf, cu, ni, mn, ps, tc, fl),
+    "TTS1" = e900_15_plotter_tts1(pf, ni, mn, ps, tc, fl),
+    "TTS2" = e900_15_plotter_tts2(pf, cu, ni, ps, tc, fl),
+    "TTS" = e900_15_plotter_tts(pf, cu, ni, mn, ps, tc, fl),
     "SD" = {
-      tts <- e900_tts(pf, cu, ni, mn, ps, tc, fl)
-      e900_sd(pf, tts)
+      tts <- e900_15_plotter_tts(pf, cu, ni, mn, ps, tc, fl)
+      e900_15_plotter_sd(pf, tts)
     }
   )
 
@@ -128,9 +127,9 @@ E900_15 <- function(product_form,
 }
 
 # TTS1
-e900_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
+e900_15_plotter_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
   A <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
-  out <- A * 3.593e-10 * (fluence^0.5695)
+  out <- A * 3.593e-10 * (fluence^0.5695) # NOTE: This is came from PLOTTER
   out <- out * (((1.8 * temperature + 32) / 550)^(-5.47))
   out <- out * ((0.09 + P / 0.012)^0.216)
   out <- out * ((1.66 + (Ni^8.54) / 0.63)^0.39)
@@ -139,7 +138,7 @@ e900_tts1 <- function(product_form, Ni, Mn, P, temperature, fluence) {
 }
 
 # TTS2
-e900_tts2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
+e900_15_plotter_tts2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
   B <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
   M <- B * pmax(pmin(113.87 * (log(fluence) - log(4.5e16)), 612.6), 0)
   M <- M * (((1.8 * temperature + 32) / 550)^(-5.45))
@@ -150,21 +149,21 @@ e900_tts2 <- function(product_form, Cu, Ni, P, temperature, fluence) {
 }
 
 # TTS = TTS1 + TTS2
-e900_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
-  tts1 <- e900_tts1(product_form, Ni, Mn, P, temperature, fluence)
-  tts2 <- e900_tts2(product_form, Cu, Ni, P, temperature, fluence)
+e900_15_plotter_tts <- function(product_form, Cu, Ni, Mn, P, temperature, fluence) {
+  tts1 <- e900_15_plotter_tts1(product_form, Ni, Mn, P, temperature, fluence)
+  tts2 <- e900_15_plotter_tts2(product_form, Cu, Ni, P, temperature, fluence)
   tts1 + tts2
 }
 
 # SD
-e900_sd <- function(product_form, tts) {
+e900_15_plotter_sd <- function(product_form, tts) {
   C <- c("F" = 6.972, "P" = 6.593, "W" = 7.681)[product_form]
   D <- c("F" = 0.199, "P" = 0.163, "W" = 0.181)[product_form]
   C * (tts^D)
 }
 
 # CF1
-e900_cf1 <- function(product_form, Ni, Mn, P, temperature) {
+e900_15_plotter_cf1 <- function(product_form, Ni, Mn, P, temperature) {
   A <- c("F" = 1.011, "P" = 1.080, "W" = 0.919)[product_form]
   out <- A * (3.593e-10 * (1e19^0.5695)) # * 3.593e-10 * (1e19^0.5695) 값으로 정규화
   out <- out * (((1.8 * temperature + 32) / 550)^(-5.47))
@@ -175,7 +174,7 @@ e900_cf1 <- function(product_form, Ni, Mn, P, temperature) {
 }
 
 # CF2
-e900_cf2 <- function(product_form, Cu, Ni, P, temperature) {
+e900_15_plotter_cf2 <- function(product_form, Cu, Ni, P, temperature) {
   B <- c("F" = 0.738, "P" = 0.819, "W" = 0.968)[product_form]
   M <- B * 612.6 # 612.6으로 정규화
   M <- M * (((1.8 * temperature + 32) / 550)^(-5.45))
@@ -186,18 +185,18 @@ e900_cf2 <- function(product_form, Cu, Ni, P, temperature) {
 }
 
 # FF1
-e900_ff1 <- function(fluence) {
+e900_15_plotter_ff1 <- function(fluence) {
   (3.593e-10 * (fluence^0.5695)) / (3.593e-10 * (1e19^0.5695)) # 정규화된 값
 }
 
 ## FF2
-e900_ff2 <- function(fluence) {
+e900_15_plotter_ff2 <- function(fluence) {
   pmax(pmin(113.87 * (log(fluence) - log(4.5e16)), 612.6), 0) / 612.6 # 정규화된 값
 }
 
 ## TTS by CFs
-e900_tts_by_cf <- function(cf1, cf2, fluence) {
-  out1 <- cf1 * e900_ff1(fluence)
-  out2 <- cf2 * e900_ff2(fluence)
+e900_15_plotter_tts_by_cf <- function(cf1, cf2, fluence) {
+  out1 <- cf1 * e900_15_plotter_ff1(fluence)
+  out2 <- cf2 * e900_15_plotter_ff2(fluence)
   out1 + out2
 }

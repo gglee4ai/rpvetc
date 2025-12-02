@@ -53,7 +53,7 @@
 #'   product_form = "B", output = "SD", output_unit = "Celsius"
 #' )
 #'
-#' @seealso \code{\link{CR3391}}, \code{\link{RG199R2_P1}}, \code{\link{RG199R2_P2}}
+#' @seealso \code{\link{CR3391}}, \code{\link{RG199R2_TTS}}
 #' @export
 NP3319 <- function(product_form = NULL,
                    Cu = NULL,

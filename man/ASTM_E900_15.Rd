@@ -64,8 +64,8 @@ ASTM_E900_15(
 A numeric vector of TTS, TTS1, TTS2, or SD in degrees Celsius or Fahrenheit, depending on the specified \code{output_unit}.
 }
 \description{
-Computes the Transition Temperature Shift (TTS) components (TTS1, TTS2) or Standard Deviation (SD)
-based on the ASTM E900-15e2 (2020) embrittlement model.
+Computes either the Transition Temperature Shift (TTS) components (TTS1, TTS2) or
+the Standard Deviation (SD), based on the ASTM E900-15e2 (2015) embrittlement model.
 }
 \details{
 This function calculates radiation-induced embrittlement in reactor pressure vessel (RPV) materials
